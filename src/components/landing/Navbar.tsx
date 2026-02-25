@@ -28,9 +28,8 @@ const Navbar = () => {
           <button onClick={() => scrollTo("about")} className="text-sm text-muted-foreground hover:text-foreground transition-colors">About</button>
           <button onClick={() => scrollTo("membership")} className="text-sm text-muted-foreground hover:text-foreground transition-colors">Membership</button>
           <button onClick={() => scrollTo("features")} className="text-sm text-muted-foreground hover:text-foreground transition-colors">Features</button>
-          <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90" onClick={() => navigate("/auth")}>
-            Join WLA
-          </Button>
+          <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90" onClick={() => navigate("/login")}>Login</Button>
+          <Button size="sm" className="bg-secondary text-secondary-foreground hover:bg-secondary/90 ml-2" onClick={() => navigate("/signup")}>Sign Up</Button>
         </div>
 
         {/* Mobile toggle */}
@@ -52,9 +51,8 @@ const Navbar = () => {
               <button onClick={() => scrollTo("about")} className="text-left text-muted-foreground hover:text-foreground">About</button>
               <button onClick={() => scrollTo("membership")} className="text-left text-muted-foreground hover:text-foreground">Membership</button>
               <button onClick={() => scrollTo("features")} className="text-left text-muted-foreground hover:text-foreground">Features</button>
-              <Button className="bg-primary text-primary-foreground hover:bg-primary/90" onClick={() => navigate("/auth")}>
-                Join WLA
-              </Button>
+              <Button className="bg-primary text-primary-foreground hover:bg-primary/90" onClick={() => navigate("/login")}>Login</Button>
+              <Button className="bg-secondary text-secondary-foreground hover:bg-secondary/90" onClick={() => navigate("/signup")}>Sign Up</Button>
             </div>
           </motion.div>
         )}
