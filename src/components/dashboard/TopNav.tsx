@@ -219,23 +219,26 @@ export default function TopNav({ tokens: tokensProp = 4820, onMenuClick }: TopNa
       if (!auth.user) return;
       // Try user_id first, then id if not found
       let profile: any = null;
-      console.log('[TopNav] Supabase Auth User ID:', auth.user.id);
+      // Try user_id first, then id if not found
       {
-        const { data } = await supabase
+        const { data, error } = await supabase
           .from('user_profiles')
           .select('first_name,last_name,email,tokens')
           .eq('user_id', auth.user.id)
           .single();
-        profile = data;
-      }
-      if (!profile) {
-        // Try id column if user_id not found
-        const { data: profile2 } = await supabase
-          .from('user_profiles')
-          .select('first_name,last_name,email,tokens')
-          .eq('id', auth.user.id)
-          .single();
-        profile = profile2;
+        if (!error && data) {
+          profile = data;
+        } else {
+          // Try id column if user_id not found
+          const { data: profile2, error: error2 } = await supabase
+            .from('user_profiles')
+            .select('first_name,last_name,email,tokens')
+            .eq('id', auth.user.id)
+            .single();
+          if (!error2 && profile2) {
+            profile = profile2;
+          }
+        }
       }
       console.log('[TopNav] Supabase Profile:', profile);
       let first = "";

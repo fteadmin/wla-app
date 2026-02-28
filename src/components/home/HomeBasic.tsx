@@ -15,11 +15,27 @@ function useMemberData() {
     async function fetchData() {
       const { data: auth } = await supabase.auth.getUser();
       if (!auth.user) return;
-      const { data: profile } = await supabase
-        .from('user_profiles')
-        .select('*')
-        .eq('user_id', auth.user.id)
-        .single();
+      // Try user_id first, then id if not found
+      let profile: any = null;
+      {
+        const { data, error } = await supabase
+          .from('user_profiles')
+          .select('*')
+          .eq('user_id', auth.user.id)
+          .single();
+        if (!error && data) {
+          profile = data;
+        } else {
+          const { data: profile2, error: error2 } = await supabase
+            .from('user_profiles')
+            .select('*')
+            .eq('id', auth.user.id)
+            .single();
+          if (!error2 && profile2) {
+            profile = profile2;
+          }
+        }
+      }
       // Use first_name from profile, fallback to user_metadata, then empty string
       let firstName = profile && (profile as any).first_name || auth.user.user_metadata?.first_name || "";
       setMember({

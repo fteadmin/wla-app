@@ -148,11 +148,27 @@ function TokenBasic() {
     async function fetchData() {
       const { data: auth } = await supabase.auth.getUser();
       if (!auth.user) return;
-      const { data: profile } = await supabase
-        .from('user_profiles')
-        .select('tokens')
-        .eq('id', auth.user.id)
-        .single<UserProfileRow>();
+      // Try user_id first, then id if not found
+      let profile: UserProfileRow | null = null;
+      {
+        const { data, error } = await supabase
+          .from('user_profiles')
+          .select('tokens')
+          .eq('user_id', auth.user.id)
+          .single<UserProfileRow>();
+        if (!error && data) {
+          profile = data;
+        } else {
+          const { data: profile2, error: error2 } = await supabase
+            .from('user_profiles')
+            .select('tokens')
+            .eq('id', auth.user.id)
+            .single<UserProfileRow>();
+          if (!error2 && profile2) {
+            profile = profile2;
+          }
+        }
+      }
       setBalance(profile && typeof profile.tokens === 'number' ? profile.tokens : 0);
       const tokenHistory = await fetchTokenHistory(auth.user.id);
       setHistory(Array.isArray(tokenHistory) ? tokenHistory : []);
