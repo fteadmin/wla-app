@@ -29,9 +29,20 @@ export default function Login() {
       return;
     }
 
-    const { data: profile } = await supabase.from("user_profiles").select("role").eq("user_id", data.user.id).single();
+    // Fetch user profile using correct user_id column
+    const { data: profile, error: profileError } = await supabase
+      .from("user_profiles")
+      .select("role")
+      .eq("user_id", data.user.id)
+      .single();
 
-    if (profile?.role === "admin") {
+    if (profileError || !profile) {
+      setError("User profile not found. Please contact support.");
+      setLoading(false);
+      return;
+    }
+
+    if (profile.role === "admin") {
       navigate("/admin-dashboard");
     } else {
       navigate("/dashboard");

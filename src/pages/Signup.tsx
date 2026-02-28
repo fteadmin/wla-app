@@ -45,16 +45,20 @@ export default function Signup() {
         options: { data: { first_name: firstName, last_name: lastName } }
       });
 
-      if (signUpError || !data.user) throw new Error(signUpError?.message || "Sign up failed.");
+      if (signUpError || !data?.user) throw new Error(signUpError?.message || "Sign up failed.");
 
-      const { error: profileError } = await supabase.from("user_profiles").insert({
-        user_id: data.user.id,
-        role: tier,
-        first_name: firstName,
-        last_name: lastName,
-      } as any);
+      // Insert user profile with correct user_id
+      const { error: profileError } = await supabase.from("user_profiles").insert([
+        {
+          user_id: data.user.id,
+          role: tier,
+          first_name: firstName,
+          last_name: lastName,
+          email: email,
+        }
+      ]);
 
-      if (profileError) throw new Error("Failed to save user profile.");
+      if (profileError) throw new Error("Failed to save user profile: " + profileError.message);
 
       navigate(tier === "admin" ? "/admin-dashboard" : "/dashboard");
     } catch (err: any) {

@@ -507,7 +507,21 @@ export default function HomeBasic() {
   const markRead = (id: number) =>
     setNotifs(ns => ns.map(n => n.id === id ? { ...n, unread: false } : n));
 
-  if (loading || !member) return <div className="hb-root"><style>{styles}</style><div className="hb-page"><div className="hb-welcome hb-a1"><div>Loading...</div></div></div></div>;
+  if (loading) {
+    return <div className="hb-root"><style>{styles}</style><div className="hb-page"><div className="hb-welcome hb-a1"><div>Loading...</div></div></div></div>;
+  }
+  if (!member) {
+    return (
+      <div className="hb-root">
+        <style>{styles}</style>
+        <div className="hb-page">
+          <div className="hb-welcome hb-a1">
+            <div className="text-red-400 text-lg font-bold">User profile not found.<br/>Please contact support or try signing up again.</div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="hb-root">
