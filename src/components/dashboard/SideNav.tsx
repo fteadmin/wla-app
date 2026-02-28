@@ -228,20 +228,44 @@ interface SideNavProps {
   memberTier?: string;
 }
 
+import { useEffect } from "react";
+
+interface ResponsiveSideNavProps extends SideNavProps {
+  open?: boolean;
+  onClose?: () => void;
+}
+
 export default function SideNav({
   active,
   memberName = "Jordan Rivera",
   memberInitials = "JR",
   memberTier = "Gold Member",
-}: SideNavProps) {
+  open = true,
+  onClose,
+}: ResponsiveSideNavProps) {
   const location = useLocation();
   const currentActive = active || location.pathname.split("/dashboard/")[1] || "dashboard";
+
+  // Close sidebar on route change (mobile)
+  useEffect(() => {
+    if (onClose) onClose();
+    // eslint-disable-next-line
+  }, [location.pathname]);
 
   return (
     <div className="sn-root">
       <style>{styles}</style>
-      <aside className="sn-aside">
-
+      {/* Overlay for mobile */}
+      <div
+        className={`fixed inset-0 z-40 bg-black/40 transition-opacity lg:hidden ${open ? 'block' : 'hidden'}`}
+        onClick={onClose}
+        aria-label="Close sidebar overlay"
+      />
+      <aside
+        className={`sn-aside fixed z-50 inset-y-0 left-0 w-64 transform bg-[#0a0a0a] border-r border-[rgba(217,186,132,0.12)] transition-transform duration-200 lg:static lg:translate-x-0 ${open ? 'translate-x-0' : '-translate-x-full'} lg:w-[220px]`}
+        style={{ minHeight: '100vh' }}
+        aria-label="Sidebar navigation"
+      >
         {/* Brand */}
         <div className="sn-brand">
           <div className="sn-brand-icon">
@@ -305,7 +329,6 @@ export default function SideNav({
             Sign Out
           </button>
         </div>
-
       </aside>
     </div>
   );

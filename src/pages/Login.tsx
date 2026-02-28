@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { LogIn, Shield, ArrowLeft, Sparkles, Mail, Lock } from "lucide-react";
 
@@ -95,7 +95,7 @@ export default function Login() {
               </button>
             </div>
             <div className="text-center">
-              <a href="/signup" className="text-[13px] font-semibold text-[#D9BA84] hover:underline">Create account</a>
+              <Link to="/signup" className="text-[13px] font-semibold text-[#D9BA84] hover:underline">Create account</Link>
             </div>
           </div>
         ) : (

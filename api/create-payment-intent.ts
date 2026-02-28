@@ -7,10 +7,10 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2022-11
 // Helper: map your Stripe priceId to amount and token count
 function getPackFromPriceId(priceId: string) {
   const ids = {
-    [process.env.VITE_STRIPE_PRICE_ID_100]: { amount: 100, tokens: 100 },
-    [process.env.VITE_STRIPE_PRICE_ID_500]: { amount: 500, tokens: 500 },
-    [process.env.VITE_STRIPE_PRICE_ID_1000]: { amount: 1000, tokens: 1000 },
-    [process.env.VITE_STRIPE_PRICE_ID_5000]: { amount: 5000, tokens: 5000 },
+    [process.env.STRIPE_PRICE_ID_100]: { amount: 100, tokens: 100 },
+    [process.env.STRIPE_PRICE_ID_500]: { amount: 500, tokens: 500 },
+    [process.env.STRIPE_PRICE_ID_1000]: { amount: 1000, tokens: 1000 },
+    [process.env.STRIPE_PRICE_ID_5000]: { amount: 5000, tokens: 5000 },
   };
   if (!ids[priceId]) throw new Error('Invalid priceId');
   return ids[priceId];

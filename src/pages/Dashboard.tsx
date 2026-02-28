@@ -84,11 +84,13 @@ export default function Dashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   return (
     <div className="flex min-h-screen">
-      {/* Sidebar: hidden on mobile, toggled with button */}
-      <div className={`fixed inset-0 z-40 bg-black/40 transition-opacity lg:hidden ${sidebarOpen ? 'block' : 'hidden'}`} onClick={() => setSidebarOpen(false)} />
-      <aside className={`fixed z-50 inset-y-0 left-0 w-64 transform bg-[#0a0a0a] border-r border-[rgba(217,186,132,0.12)] transition-transform duration-200 lg:static lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:w-[220px]`} style={{ minHeight: '100vh' }}>
-        <SideNav active={active} memberName={memberName} memberInitials={memberInitials} />
-      </aside>
+      <SideNav
+        active={active}
+        memberName={memberName}
+        memberInitials={memberInitials}
+        open={sidebarOpen || window.innerWidth >= 1024}
+        onClose={() => setSidebarOpen(false)}
+      />
       <div className="flex-1 flex flex-col min-w-0">
         {/* TopNav with mobile menu button */}
         <div className="sticky top-0 z-30">
