@@ -16,11 +16,26 @@ export default function AdminDashboard() {
       }
       setUser(data.user);
       // Check role
-      const { data: profile } = await supabase
-        .from("user_profiles")
-        .select("role")
-        .eq("user_id", data.user.id)
-        .single();
+      let profile: any = null;
+      {
+        const { data: p, error: error1 } = await supabase
+          .from("user_profiles")
+          .select("role")
+          .eq("user_id", data.user.id)
+          .single();
+        if (!error1 && p) {
+          profile = p;
+        } else {
+          const { data: p2, error: error2 } = await supabase
+            .from("user_profiles")
+            .select("role")
+            .eq("id", data.user.id)
+            .single();
+          if (!error2 && p2) {
+            profile = p2;
+          }
+        }
+      }
       if (!profile || profile.role !== "admin") {
         navigate("/dashboard");
         return;

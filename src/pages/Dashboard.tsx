@@ -38,33 +38,41 @@ export default function Dashboard() {
         // Fetch user role and profile info from user_profiles
         let profile: any = null;
         {
-          const { data: p } = await supabase
+          const { data: p, error: error1 } = await supabase
             .from('user_profiles')
             .select('role,first_name,last_name,email')
             .eq('user_id', data.user.id)
             .single();
-          profile = p;
+          if (!error1 && p) {
+            profile = p;
+          } else {
+            const { data: p2, error: error2 } = await supabase
+              .from('user_profiles')
+              .select('role,first_name,last_name,email')
+              .eq('id', data.user.id)
+              .single();
+            if (!error2 && p2) {
+              profile = p2;
+            }
+          }
         }
         if (!profile) {
-          // Try id column if user_id not found
-          const { data: p2 } = await supabase
-            .from('user_profiles')
-            .select('role,first_name,last_name,email')
-            .eq('id', data.user.id)
-            .single();
-          profile = p2;
+          setRole('basic');
+          setMemberName(data.user.email || "");
+          setMemberInitials((data.user.email || "").slice(0, 2).toUpperCase());
+        } else {
+          setRole(profile?.role || 'basic');
+          let first = profile?.first_name || data.user.user_metadata?.first_name || "";
+          let last = profile?.last_name || data.user.user_metadata?.last_name || "";
+          let email = profile?.email || data.user.email || "";
+          let name = (first + " " + last).trim() || email;
+          setMemberName(name);
+          let initials = (first[0] || "").toUpperCase() + (last[0] || "").toUpperCase();
+          if (!initials.trim()) {
+            initials = email.slice(0, 2).toUpperCase();
+          }
+          setMemberInitials(initials);
         }
-        setRole(profile?.role || 'basic');
-        let first = profile?.first_name || data.user.user_metadata?.first_name || "";
-        let last = profile?.last_name || data.user.user_metadata?.last_name || "";
-        let email = profile?.email || data.user.email || "";
-        let name = (first + " " + last).trim() || email;
-        setMemberName(name);
-        let initials = (first[0] || "").toUpperCase() + (last[0] || "").toUpperCase();
-        if (!initials.trim()) {
-          initials = email.slice(0, 2).toUpperCase();
-        }
-        setMemberInitials(initials);
       }
       setLoading(false);
     });
