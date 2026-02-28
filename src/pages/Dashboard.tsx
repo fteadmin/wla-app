@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -17,7 +16,6 @@ import TokenBasic from "@/components/dashboard/TokenBasic";
 import TokenAdmin from "@/components/dashboard/TokenAdmin";
 import BasicDashboard from "@/components/dashboard/BasicDashboard";
 import AdminDashboard from "@/components/dashboard/AdminDashboard";
-// ...existing code...
 
 export default function Dashboard() {
   const [loading, setLoading] = useState(true);
@@ -25,57 +23,48 @@ export default function Dashboard() {
   const [role, setRole] = useState<string | null>(null);
   const [memberName, setMemberName] = useState<string>("");
   const [memberInitials, setMemberInitials] = useState<string>("");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [active, setActive] = useState("dashboard");
   const navigate = useNavigate();
   const location = useLocation();
-  const [active, setActive] = useState("dashboard");
 
   useEffect(() => {
-    supabase.auth.getUser().then(async ({ data }) => {
+    const fetchUserProfile = async () => {
+      const { data } = await supabase.auth.getUser();
       if (!data.user) {
         navigate("/login");
-      } else {
-        setUser(data.user);
-        // Fetch user role and profile info from user_profiles
-        let profile: any = null;
-        {
-          const { data: p, error: error1 } = await supabase
-            .from('user_profiles')
-            .select('role,first_name,last_name,email')
-            .eq('user_id', data.user.id)
-            .single();
-          if (!error1 && p) {
-            profile = p;
-          } else {
-            const { data: p2, error: error2 } = await supabase
-              .from('user_profiles')
-              .select('role,first_name,last_name,email')
-              .eq('id', data.user.id)
-              .single();
-            if (!error2 && p2) {
-              profile = p2;
-            }
-          }
-        }
-        if (!profile) {
-          setRole('basic');
+        return;
+      }
+
+      setUser(data.user);
+
+      try {
+        const { data: profileData, error } = await supabase
+          .from("user_profiles")
+          .select("role, tokens")
+          .or(`user_id.eq.${data.user.id},id.eq.${data.user.id}`)
+          .single();
+
+        if (error || !profileData) {
+          console.error("Profile fetch failed. user_id:", data.user.id, error);
+          setRole("basic");
           setMemberName(data.user.email || "");
           setMemberInitials((data.user.email || "").slice(0, 2).toUpperCase());
         } else {
-          setRole(profile?.role || 'basic');
-          let first = profile?.first_name || data.user.user_metadata?.first_name || "";
-          let last = profile?.last_name || data.user.user_metadata?.last_name || "";
-          let email = profile?.email || data.user.email || "";
-          let name = (first + " " + last).trim() || email;
+          setRole(profileData.role || "basic");
+          const name = profileData.role === "admin" ? "Admin" : data.user.email;
           setMemberName(name);
-          let initials = (first[0] || "").toUpperCase() + (last[0] || "").toUpperCase();
-          if (!initials.trim()) {
-            initials = email.slice(0, 2).toUpperCase();
-          }
-          setMemberInitials(initials);
+          setMemberInitials(name.slice(0, 2).toUpperCase());
         }
+      } catch (err) {
+        console.error("Error fetching profile:", err);
+        setRole("basic");
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
-    });
+    };
+
+    fetchUserProfile();
   }, [navigate]);
 
   useEffect(() => {
@@ -89,7 +78,6 @@ export default function Dashboard() {
   if (!user) return null;
   if (!role) return <div className="p-10 text-center">Loading role...</div>;
 
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   return (
     <div className="flex min-h-screen">
       <SideNav
@@ -100,18 +88,17 @@ export default function Dashboard() {
         onClose={() => setSidebarOpen(false)}
       />
       <div className="flex-1 flex flex-col min-w-0">
-        {/* TopNav with mobile menu button */}
         <div className="sticky top-0 z-30">
-          <TopNav onMenuClick={() => setSidebarOpen(o => !o)} />
+          <TopNav onMenuClick={() => setSidebarOpen((o) => !o)} />
         </div>
         <main className="flex-1 p-4 sm:p-6 md:p-8 lg:p-10">
           <Routes>
-            <Route path="/" element={role === 'admin' ? <AdminDashboard /> : <BasicDashboard />} />
-            <Route path="marketplace" element={role === 'admin' ? <MarketplaceAdmin /> : <MarketplaceBasic />} />
-            <Route path="contests" element={role === 'admin' ? <ContestsAdmin /> : <ContestsBasic />} />
-            <Route path="content-uploads" element={role === 'admin' ? <ContentUploadsAdmin /> : <ContentUploadsBasic />} />
-            <Route path="membership" element={role === 'admin' ? <MembershipAdmin /> : <MembershipBasic />} />
-            <Route path="token" element={role === 'admin' ? <TokenAdmin /> : <TokenBasic />} />
+            <Route path="/" element={role === "admin" ? <AdminDashboard /> : <BasicDashboard />} />
+            <Route path="marketplace" element={role === "admin" ? <MarketplaceAdmin /> : <MarketplaceBasic />} />
+            <Route path="contests" element={role === "admin" ? <ContestsAdmin /> : <ContestsBasic />} />
+            <Route path="content-uploads" element={role === "admin" ? <ContentUploadsAdmin /> : <ContentUploadsBasic />} />
+            <Route path="membership" element={role === "admin" ? <MembershipAdmin /> : <MembershipBasic />} />
+            <Route path="token" element={role === "admin" ? <TokenAdmin /> : <TokenBasic />} />
           </Routes>
         </main>
       </div>

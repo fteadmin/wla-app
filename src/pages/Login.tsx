@@ -50,6 +50,7 @@ export default function Login() {
       }
 
       if (!profile) {
+        console.error("Profile fetch failed. user_id:", data.user.id);
         throw new Error("User profile not found. Please contact support.");
       }
 
