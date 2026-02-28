@@ -6,8 +6,8 @@ import { useNavigate } from "react-router-dom";
 const tiers = [
   {
     name: "Basic Member",
-    price: "$20",
-    period: "/year",
+    price: "$20 per year",
+    period: "",
     icon: Shield,
     description: "Your gateway into the WLA community",
     features: [
@@ -104,7 +104,6 @@ const MembershipSection = () => {
               <p className="text-muted-foreground text-sm mb-4">{tier.description}</p>
               <div className="mb-6">
                 <span className="font-display text-3xl font-bold text-foreground">{tier.price}</span>
-                <span className="text-muted-foreground text-sm">{tier.period}</span>
               </div>
               <ul className="space-y-3 mb-8">
                 {tier.features.map((f) => (

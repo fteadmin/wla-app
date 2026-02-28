@@ -1,0 +1,43 @@
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
+
+export default function AdminDashboard() {
+  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<any>(null);
+  const [role, setRole] = useState<string | null>(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    supabase.auth.getUser().then(async ({ data }) => {
+      if (!data.user) {
+        navigate("/login");
+        return;
+      }
+      setUser(data.user);
+      // Check role
+      const { data: profile } = await supabase
+        .from("user_profiles")
+        .select("role")
+        .eq("user_id", data.user.id)
+        .single();
+      if (!profile || profile.role !== "admin") {
+        navigate("/dashboard");
+        return;
+      }
+      setRole(profile.role);
+      setLoading(false);
+    });
+  }, [navigate]);
+
+  if (loading) return <div className="p-10 text-center">Loading...</div>;
+  if (!user) return null;
+
+  return (
+    <div className="p-10">
+      <h1 className="text-3xl font-bold mb-4">Admin Dashboard</h1>
+      <p className="mb-2">Hello, {user.email}!</p>
+      <p>This is the admin dashboard.</p>
+    </div>
+  );
+}

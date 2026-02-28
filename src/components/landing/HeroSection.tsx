@@ -58,7 +58,7 @@ const HeroSection = () => {
             <Button
               size="lg"
               className="bg-primary text-primary-foreground hover:bg-primary/90 text-lg px-8 py-6 shadow-[0_0_30px_hsl(38_46%_68%_/_0.3)] hover:shadow-[0_0_50px_hsl(38_46%_68%_/_0.5)] transition-all duration-300"
-              onClick={() => navigate("/auth")}
+              onClick={() => navigate("/signup")}
             >
               Join WLA <ChevronRight className="ml-2 h-5 w-5" />
             </Button>

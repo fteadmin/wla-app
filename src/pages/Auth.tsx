@@ -1,6 +1,8 @@
+
 import { useState } from "react";
 import { useLocation } from "react-router-dom";
 
+export default function Auth() {
   const [tier, setTier] = useState<"basic" | "admin" | null>(null);
   const location = useLocation();
   const params = new URLSearchParams(location.search);
@@ -55,3 +57,4 @@ import { useLocation } from "react-router-dom";
     </div>
   );
 }
+
