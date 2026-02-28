@@ -58,10 +58,14 @@ export default function Signup() {
         }
       ]);
 
-      if (profileError) throw new Error("Failed to save user profile: " + profileError.message);
+      if (profileError) {
+        console.error("Failed to save user profile:", profileError);
+        throw new Error("Failed to save user profile: " + profileError.message);
+      }
 
       navigate(tier === "admin" ? "/admin-dashboard" : "/dashboard");
     } catch (err: any) {
+      console.error("Signup error:", err);
       setError(err.message);
     } finally {
       setLoading(false);

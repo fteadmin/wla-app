@@ -21,22 +21,21 @@ export default function Login() {
     }
     setLoading(true);
 
-    const { data, error: loginError } = await supabase.auth.signInWithPassword({ email, password });
+    try {
+      const { data, error: loginError } = await supabase.auth.signInWithPassword({ email, password });
 
-    if (loginError || !data.user) {
-      setError(loginError?.message || "Login failed.");
-      setLoading(false);
-      return;
-    }
+      if (loginError || !data.user) {
+        throw new Error(loginError?.message || "Login failed.");
+      }
 
-    // Fetch user profile using user_id, fallback to id if needed
-    let profile: any = null;
-    {
+      // Fetch user profile using user_id, fallback to id if needed
+      let profile: any = null;
       const { data: p, error: error1 } = await supabase
         .from("user_profiles")
         .select("role")
         .eq("user_id", data.user.id)
         .single();
+
       if (!error1 && p) {
         profile = p;
       } else {
@@ -49,18 +48,22 @@ export default function Login() {
           profile = p2;
         }
       }
-    }
-    if (!profile) {
-      setError("User profile not found. Please contact support.");
+
+      if (!profile) {
+        throw new Error("User profile not found. Please contact support.");
+      }
+
+      if (profile.role === "admin") {
+        navigate("/admin-dashboard");
+      } else {
+        navigate("/dashboard");
+      }
+    } catch (err: any) {
+      console.error("Login error:", err);
+      setError(err.message);
+    } finally {
       setLoading(false);
-      return;
     }
-    if (profile.role === "admin") {
-      navigate("/admin-dashboard");
-    } else {
-      navigate("/dashboard");
-    }
-    setLoading(false);
   }
 
   return (
