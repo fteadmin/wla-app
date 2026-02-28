@@ -29,19 +29,32 @@ export default function Login() {
       return;
     }
 
-    // Fetch user profile using correct user_id column
-    const { data: profile, error: profileError } = await supabase
-      .from("user_profiles")
-      .select("role")
-      .eq("user_id", data.user.id)
-      .single();
-
-    if (profileError || !profile) {
+    // Fetch user profile using user_id, fallback to id if needed
+    let profile: any = null;
+    {
+      const { data: p, error: error1 } = await supabase
+        .from("user_profiles")
+        .select("role")
+        .eq("user_id", data.user.id)
+        .single();
+      if (!error1 && p) {
+        profile = p;
+      } else {
+        const { data: p2, error: error2 } = await supabase
+          .from("user_profiles")
+          .select("role")
+          .eq("id", data.user.id)
+          .single();
+        if (!error2 && p2) {
+          profile = p2;
+        }
+      }
+    }
+    if (!profile) {
       setError("User profile not found. Please contact support.");
       setLoading(false);
       return;
     }
-
     if (profile.role === "admin") {
       navigate("/admin-dashboard");
     } else {
