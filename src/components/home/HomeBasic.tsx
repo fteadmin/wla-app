@@ -1,51 +1,60 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Trophy, CheckCircle, Clock, ChevronRight,
-  Star, Users, Calendar, Award, TrendingUp, Coins,
-  Car, Flame, Hash, Sparkles, ArrowUpRight, Zap,
-  BarChart2, Shield, Upload, ShoppingBag
+  Star, Users, Calendar, TrendingUp, Coins,
+  Car, Flame, Hash, Sparkles, Zap,
+  Shield, Upload, ShoppingBag,
 } from "lucide-react";
 
-// ─── User data from Supabase ────────────────────────────────────────────────
+// ─── Minimal CSS: only keyframes (can't be expressed in Tailwind) ─────────────
+const animations = `
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(14px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .fu1 { animation: fadeUp 0.45s cubic-bezier(0.16,1,0.3,1) 0.00s both; }
+  .fu2 { animation: fadeUp 0.45s cubic-bezier(0.16,1,0.3,1) 0.07s both; }
+  .fu3 { animation: fadeUp 0.45s cubic-bezier(0.16,1,0.3,1) 0.13s both; }
+  .fu4 { animation: fadeUp 0.45s cubic-bezier(0.16,1,0.3,1) 0.19s both; }
+  .fu5 { animation: fadeUp 0.45s cubic-bezier(0.16,1,0.3,1) 0.25s both; }
+  .fu6 { animation: fadeUp 0.45s cubic-bezier(0.16,1,0.3,1) 0.31s both; }
+`;
+
+// ─── Supabase data hook ───────────────────────────────────────────────────────
 function useMemberData() {
-  const [member, setMember] = useState<any>(null);
+  const [member, setMember] = useState<{
+    name: string; id: string; tier: string; since: string;
+    avatar: string; car: string; tokens: number; nextReward: number;
+  } | null>(null);
   const [loading, setLoading] = useState(true);
+
   useEffect(() => {
     async function fetchData() {
       const { data: auth } = await supabase.auth.getUser();
       if (!auth.user) return;
-      // Try user_id first, then id if not found
-      let profile: any = null;
-      {
-        const { data, error } = await supabase
-          .from('user_profiles')
-          .select('*')
-          .eq('user_id', auth.user.id)
-          .single();
-        if (!error && data) {
-          profile = data;
-        } else {
-          const { data: profile2, error: error2 } = await supabase
-            .from('user_profiles')
-            .select('*')
-            .eq('id', auth.user.id)
-            .single();
-          if (!error2 && profile2) {
-            profile = profile2;
-          }
-        }
+
+      let profile: Record<string, unknown> | null = null;
+      const { data, error } = await supabase
+        .from("user_profiles").select("*").eq("user_id", auth.user.id).single();
+      if (!error && data) {
+        profile = data as Record<string, unknown>;
+      } else {
+        const { data: p2, error: e2 } = await supabase
+          .from("user_profiles").select("*").eq("id", auth.user.id).single();
+        if (!e2 && p2) profile = p2 as Record<string, unknown>;
       }
-      // Use first_name from profile, fallback to user_metadata, then empty string
-      let firstName = profile && (profile as any).first_name || auth.user.user_metadata?.first_name || "";
+
+      const firstName = (profile?.first_name as string) || auth.user.user_metadata?.first_name || "";
       setMember({
-        name: firstName,
-        id: profile && (profile as any).id || auth.user.id,
-        tier: profile && (profile as any).role || 'Member',
-        since: profile && (profile as any).created_at ? new Date((profile as any).created_at).toLocaleDateString() : '',
-        avatar: firstName[0]?.toUpperCase() || "?",
-        car: profile && (profile as any).car || '',
-        tokens: profile && (profile as any).tokens || 0,
+        name:       firstName,
+        id:         (profile?.id as string)         || auth.user.id,
+        tier:       (profile?.role as string)        || "Member",
+        since:      profile?.created_at ? new Date(profile.created_at as string).toLocaleDateString() : "",
+        avatar:     firstName[0]?.toUpperCase()      || "?",
+        car:        (profile?.car as string)         || "",
+        tokens:     (profile?.tokens as number)      || 0,
         nextReward: 5000,
       });
       setLoading(false);
@@ -55,31 +64,32 @@ function useMemberData() {
   return { member, loading };
 }
 
+// ─── Static data ──────────────────────────────────────────────────────────────
 const CONTESTS = [
-  { id: 1, title: "Best Off-Road Build",  prize: "2,000 tokens + Trophy", ends: "Mar 15", entries: 47, category: "Builds",       hot: true  },
-  { id: 2, title: "Spring Trail Photo",   prize: "1,000 tokens",          ends: "Mar 22", entries: 31, category: "Photography",  hot: false },
-  { id: 3, title: "Member of the Month",  prize: "500 tokens + Badge",    ends: "Mar 31", entries: 18, category: "Community",   hot: false },
+  { id: 1, title: "Best Off-Road Build",  prize: "2,000 tokens + Trophy", ends: "Mar 15", entries: 47, category: "Builds",      hot: true  },
+  { id: 2, title: "Spring Trail Photo",   prize: "1,000 tokens",          ends: "Mar 22", entries: 31, category: "Photography", hot: false },
+  { id: 3, title: "Member of the Month",  prize: "500 tokens + Badge",    ends: "Mar 31", entries: 18, category: "Community",  hot: false },
 ];
 
 const NOTIFICATIONS = [
-  { id: 1, type: "event",   icon: Calendar,   color: "#D9BA84", title: "Monthly Cruise this Saturday",    time: "2h ago",  unread: true  },
-  { id: 2, type: "reward",  icon: Coins,      color: "#c8b450", title: "You earned 150 tokens!",          time: "1d ago",  unread: true  },
-  { id: 3, type: "contest", icon: Trophy,     color: "#D9BA84", title: "Photo Contest ends in 3 days",    time: "2d ago",  unread: false },
-  { id: 4, type: "system",  icon: CheckCircle,color: "#a0a0b4", title: "Membership renewed successfully", time: "5d ago",  unread: false },
+  { id: 1, icon: Calendar,     color: "text-[#D9BA84]", title: "Monthly Cruise this Saturday",    time: "2h ago",  unread: true  },
+  { id: 2, icon: Coins,        color: "text-[#c8b450]", title: "You earned 150 tokens!",          time: "1d ago",  unread: true  },
+  { id: 3, icon: Trophy,       color: "text-[#D9BA84]", title: "Photo Contest ends in 3 days",    time: "2d ago",  unread: false },
+  { id: 4, icon: CheckCircle,  color: "text-[#a0a0b4]", title: "Membership renewed successfully", time: "5d ago",  unread: false },
 ];
 
 const STATS = [
-  { label: "Events Attended",  value: 12,  icon: Calendar,    suffix: "" },
-  { label: "Contests Entered", value: 5,   icon: Trophy,      suffix: "" },
-  { label: "Forum Posts",      value: 38,  icon: Users,       suffix: "" },
-  { label: "Miles Logged",     value: 820, icon: TrendingUp,  suffix: "" },
+  { label: "Events Attended",  value: 12,  icon: Calendar   },
+  { label: "Contests Entered", value: 5,   icon: Trophy     },
+  { label: "Forum Posts",      value: 38,  icon: Users      },
+  { label: "Miles Logged",     value: 820, icon: TrendingUp },
 ];
 
 const QUICK_ACTIONS = [
-  { label: "Join Contest",   icon: Trophy,      color: "#D9BA84", to: "/dashboard/contests"       },
-  { label: "Marketplace",    icon: ShoppingBag, color: "#c8b450", to: "/dashboard/marketplace"    },
-  { label: "Upload Content", icon: Upload,      color: "#D9BA84", to: "/dashboard/content-uploads"},
-  { label: "My Membership",  icon: Shield,      color: "#c8b450", to: "/dashboard/membership"     },
+  { label: "Join Contest",   icon: Trophy,      to: "/dashboard/contests"        },
+  { label: "Marketplace",    icon: ShoppingBag, to: "/dashboard/marketplace"     },
+  { label: "Upload Content", icon: Upload,      to: "/dashboard/content-uploads" },
+  { label: "My Membership",  icon: Shield,      to: "/dashboard/membership"      },
 ];
 
 const RECENT_ACTIVITY = [
@@ -87,11 +97,10 @@ const RECENT_ACTIVITY = [
   { label: "Uploaded trail photo from Mojave trip", time: "Yesterday", icon: Upload   },
   { label: "Redeemed 200 tokens for sticker pack",  time: "Mar 2",    icon: Coins    },
   { label: "Attended March Community Meetup",       time: "Feb 28",   icon: Calendar },
-  { label: "Earned Silver Trail Badge",             time: "Feb 20",   icon: Award    },
 ];
 
-// ─── SVG QR (decorative) ─────────────────────────────────────────────────────
-function FakeQR({ size = 108 }) {
+// ─── Decorative QR ────────────────────────────────────────────────────────────
+function FakeQR({ size = 100 }: { size?: number }) {
   const seed = [
     [1,1,1,1,1,1,1,0,1,0,0,0,1,0,1,1,1,1,1,1,1],
     [1,0,0,0,0,0,1,0,0,1,1,0,0,0,1,0,0,0,0,0,1],
@@ -117,27 +126,22 @@ function FakeQR({ size = 108 }) {
   ];
   const cols = seed[0].length;
   const cell = size / cols;
-  const cells = [];
-  seed.forEach((row, r) =>
-    row.forEach((v, c) => {
-      if (v) cells.push(
-        <rect key={`${r}-${c}`} x={c * cell} y={r * cell}
-          width={cell - 0.6} height={cell - 0.6}
-          fill="#D9BA84" rx="0.5" />
-      );
-    })
-  );
   return (
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ display: "block" }}>
-      {cells}
+      {seed.flatMap((row, r) =>
+        row.map((v, c) => v ? (
+          <rect key={`${r}-${c}`} x={c * cell} y={r * cell}
+            width={cell - 0.5} height={cell - 0.5} fill="#D9BA84" rx="0.4" />
+        ) : null)
+      )}
     </svg>
   );
 }
 
-// ─── Token progress ring ──────────────────────────────────────────────────────
-function TokenRing({ value, max }) {
-  const pct = Math.min(value / max, 1);
-  const r = 40, cx = 48, cy = 48, circ = 2 * Math.PI * r;
+// ─── Token ring SVG ───────────────────────────────────────────────────────────
+function TokenRing({ value, max }: { value: number; max: number }) {
+  const pct  = Math.min(value / max, 1);
+  const r    = 40; const cx = 48; const cy = 48; const circ = 2 * Math.PI * r;
   const dash = circ * pct;
   return (
     <svg width={96} height={96} viewBox="0 0 96 96">
@@ -156,365 +160,33 @@ function TokenRing({ value, max }) {
   );
 }
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
-const styles = `
-  @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+// ─── Shared sub-components ────────────────────────────────────────────────────
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex items-center gap-3 mb-3.5 text-[10px] font-bold tracking-[0.1em] uppercase text-[#a0a0b4]">
+      {children}
+      <div className="flex-1 h-px bg-[#D9BA84]/10" />
+    </div>
+  );
+}
 
-  .hb-root *, .hb-root *::before, .hb-root *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  .hb-root {
-    font-family: 'Sora', sans-serif;
-    color: #ffffff;
-    background: #000000;
-    min-height: 100vh;
-  }
+function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+  return (
+    <div className={`bg-[#0d0d0d] border border-[#D9BA84]/13 rounded-2xl transition-all duration-250 hover:border-[#D9BA84]/32 hover:-translate-y-0.5 hover:shadow-[0_14px_40px_rgba(0,0,0,0.65)] ${className}`}>
+      {children}
+    </div>
+  );
+}
 
-  .hb-page {
-    padding: 28px 28px 60px;
-    max-width: 1100px;
-    background:
-      radial-gradient(ellipse 60% 35% at 5% 0%, rgba(217,186,132,0.07) 0%, transparent 55%),
-      radial-gradient(ellipse 50% 30% at 95% 100%, rgba(200,180,80,0.05) 0%, transparent 50%);
-  }
-
-  /* ── Welcome ── */
-  .hb-welcome {
-    display: flex; align-items: flex-end; justify-content: space-between;
-    margin-bottom: 24px; flex-wrap: wrap; gap: 14px;
-  }
-  .hb-greet-tag {
-    font-size: 10px; font-weight: 700; letter-spacing: 0.12em;
-    text-transform: uppercase; color: #D9BA84; margin-bottom: 6px;
-    display: flex; align-items: center; gap: 6px;
-  }
-  .hb-greet-tag::before { content: ''; width: 18px; height: 1px; background: #D9BA84; }
-  .hb-name {
-    font-size: 30px; font-weight: 800; letter-spacing: -0.8px;
-    line-height: 1.1; color: #ffffff;
-  }
-  .hb-sub { font-size: 13px; color: #a0a0b4; margin-top: 5px; }
-  .hb-active-pill {
-    display: flex; align-items: center; gap: 6px;
-    padding: 7px 14px; border-radius: 20px;
-    background: rgba(217,186,132,0.08); border: 1px solid rgba(217,186,132,0.2);
-    font-size: 12px; font-weight: 600; color: #D9BA84;
-    white-space: nowrap;
-  }
-  .hb-pulse { width: 7px; height: 7px; border-radius: 50%; background: #D9BA84; box-shadow: 0 0 6px rgba(217,186,132,0.6); animation: hbPulse 2s infinite; }
-  @keyframes hbPulse { 0%,100%{opacity:1}50%{opacity:0.35} }
-
-  /* ── Card base ── */
-  .hb-card {
-    background: #0d0d0d;
-    border: 1px solid rgba(217,186,132,0.13);
-    border-radius: 20px;
-    transition: border-color 0.25s, transform 0.25s, box-shadow 0.25s;
-  }
-  .hb-card:hover {
-    border-color: rgba(217,186,132,0.32);
-    transform: translateY(-2px);
-    box-shadow: 0 14px 40px rgba(0,0,0,0.65), 0 0 0 1px rgba(217,186,132,0.07);
-  }
-
-  /* ── Top 2-col grid ── */
-  .hb-top-grid {
-    display: grid;
-    grid-template-columns: 1fr 340px;
-    gap: 16px;
-    margin-bottom: 16px;
-  }
-  @media(max-width:860px){ .hb-top-grid{ grid-template-columns:1fr; } }
-
-  /* ── Membership card ── */
-  .hb-member-card {
-    background: #0d0d0d;
-    border: 1px solid rgba(217,186,132,0.18);
-    border-radius: 20px; padding: 26px;
-    position: relative; overflow: hidden;
-    transition: border-color 0.25s, transform 0.25s, box-shadow 0.25s;
-  }
-  .hb-member-card:hover {
-    border-color: rgba(217,186,132,0.4);
-    transform: translateY(-2px);
-    box-shadow: 0 16px 48px rgba(0,0,0,0.7), 0 0 30px rgba(217,186,132,0.05);
-  }
-  .hb-mc-glow {
-    position: absolute; top: -50px; right: -50px;
-    width: 220px; height: 220px; border-radius: 50%;
-    background: radial-gradient(circle, rgba(217,186,132,0.07) 0%, transparent 70%);
-    pointer-events: none;
-  }
-  .hb-mc-pattern {
-    position: absolute; inset: 0; pointer-events: none; opacity: 0.035;
-    background-image: repeating-linear-gradient(
-      45deg, #D9BA84 0px, #D9BA84 1px, transparent 1px, transparent 14px
-    );
-  }
-  .hb-mc-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 22px; position: relative; }
-  .hb-mc-tier {
-    display: inline-flex; align-items: center; gap: 5px;
-    background: rgba(217,186,132,0.1); border: 1px solid rgba(217,186,132,0.22);
-    padding: 4px 12px; border-radius: 20px;
-    font-size: 11px; font-weight: 700; letter-spacing: 0.04em; color: #D9BA84;
-  }
-  .hb-mc-verified { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #D9BA84; font-weight: 600; }
-  .hb-mc-body { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; position: relative; }
-  .hb-mc-name { font-size: 22px; font-weight: 800; letter-spacing: -0.3px; margin-bottom: 5px; }
-  .hb-mc-car { font-size: 12px; color: #a0a0b4; display: flex; align-items: center; gap: 5px; margin-bottom: 14px; }
-  .hb-mc-id {
-    font-family: 'JetBrains Mono', monospace; font-size: 12px;
-    letter-spacing: 0.04em; color: #D9BA84;
-    background: rgba(217,186,132,0.08); border: 1px solid rgba(217,186,132,0.15);
-    padding: 6px 12px; border-radius: 9px;
-    display: inline-flex; align-items: center; gap: 6px;
-  }
-  .hb-mc-since { font-size: 11px; color: #a0a0b4; margin-top: 8px; }
-  .hb-mc-qr {
-    background: rgba(217,186,132,0.05); border: 1px solid rgba(217,186,132,0.15);
-    border-radius: 14px; padding: 12px;
-    display: flex; flex-direction: column; align-items: center; gap: 6px;
-    flex-shrink: 0;
-  }
-  .hb-mc-qr-lbl { font-size: 9px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #a0a0b4; }
-
-  /* ── Token card ── */
-  .hb-token-card {
-    background: #0d0d0d;
-    border: 1px solid rgba(217,186,132,0.13);
-    border-radius: 20px; padding: 22px;
-    display: flex; flex-direction: column; align-items: center;
-    text-align: center;
-    transition: border-color 0.25s, transform 0.25s, box-shadow 0.25s;
-  }
-  .hb-token-card:hover {
-    border-color: rgba(217,186,132,0.32);
-    transform: translateY(-2px);
-    box-shadow: 0 14px 40px rgba(0,0,0,0.65);
-  }
-  .hb-token-ring-wrap { position: relative; margin-bottom: 10px; }
-  .hb-token-center {
-    position: absolute; inset: 0;
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-  }
-  .hb-token-val { font-size: 20px; font-weight: 800; color: #D9BA84; font-family: 'JetBrains Mono', monospace; letter-spacing: -1px; }
-  .hb-token-unit { font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: #a0a0b4; }
-  .hb-token-title { font-size: 14px; font-weight: 700; color: #ffffff; margin-bottom: 3px; }
-  .hb-token-sub { font-size: 11px; color: #a0a0b4; }
-  .hb-token-next {
-    margin-top: 10px; padding: 4px 12px; border-radius: 20px;
-    background: rgba(217,186,132,0.07); border: 1px solid rgba(217,186,132,0.14);
-    font-size: 10px; font-weight: 600; color: #D9BA84;
-  }
-  .hb-token-btns { display: flex; gap: 8px; width: 100%; margin-top: 14px; }
-  .hb-btn-outline {
-    flex: 1; padding: 9px 0; border-radius: 10px;
-    border: 1px solid rgba(217,186,132,0.2);
-    background: rgba(217,186,132,0.05); color: #D9BA84;
-    font-size: 12px; font-weight: 600; cursor: pointer;
-    font-family: 'Sora', sans-serif;
-    transition: background 0.2s, border-color 0.2s;
-  }
-  .hb-btn-outline:hover { background: rgba(217,186,132,0.12); border-color: rgba(217,186,132,0.35); }
-  .hb-btn-gold {
-    flex: 1; padding: 9px 0; border-radius: 10px; border: none;
-    background: linear-gradient(135deg, #D9BA84, #c8b450); color: #000;
-    font-size: 12px; font-weight: 700; cursor: pointer;
-    font-family: 'Sora', sans-serif;
-    transition: opacity 0.2s, transform 0.15s;
-  }
-  .hb-btn-gold:hover { opacity: 0.9; transform: scale(1.02); }
-
-  /* ── Stats row ── */
-  .hb-stats-grid {
-    display: grid; grid-template-columns: repeat(4, 1fr);
-    gap: 16px; margin-bottom: 16px;
-  }
-  @media(max-width:760px){ .hb-stats-grid{ grid-template-columns:1fr 1fr; } }
-
-  .hb-stat {
-    background: #0d0d0d;
-    border: 1px solid rgba(217,186,132,0.13);
-    border-radius: 16px; padding: 18px 16px;
-    transition: border-color 0.25s, transform 0.25s, box-shadow 0.25s;
-    cursor: default;
-  }
-  .hb-stat:hover {
-    border-color: rgba(217,186,132,0.32);
-    transform: translateY(-2px);
-    box-shadow: 0 10px 30px rgba(0,0,0,0.5), 0 0 16px rgba(217,186,132,0.04);
-  }
-  .hb-stat-ico {
-    width: 32px; height: 32px; border-radius: 9px; margin-bottom: 12px;
-    background: rgba(217,186,132,0.09); border: 1px solid rgba(217,186,132,0.14);
-    display: flex; align-items: center; justify-content: center; color: #D9BA84;
-    transition: background 0.2s, box-shadow 0.2s;
-  }
-  .hb-stat:hover .hb-stat-ico { background: rgba(217,186,132,0.16); box-shadow: 0 0 14px rgba(217,186,132,0.12); }
-  .hb-stat-val { font-size: 28px; font-weight: 800; color: #fff; font-family: 'JetBrains Mono', monospace; letter-spacing: -1px; line-height: 1; }
-  .hb-stat-lbl { font-size: 11px; color: #a0a0b4; margin-top: 4px; }
-
-  /* ── Quick actions ── */
-  .hb-qa-grid {
-    display: grid; grid-template-columns: repeat(4, 1fr);
-    gap: 12px; margin-bottom: 16px;
-  }
-  @media(max-width:760px){ .hb-qa-grid{ grid-template-columns:1fr 1fr; } }
-
-  .hb-qa {
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    gap: 10px; padding: 18px 12px;
-    background: #0d0d0d; border: 1px solid rgba(217,186,132,0.13);
-    border-radius: 16px; cursor: pointer; text-decoration: none;
-    transition: border-color 0.25s, transform 0.25s, box-shadow 0.25s, background 0.25s;
-  }
-  .hb-qa:hover {
-    border-color: rgba(217,186,132,0.35);
-    transform: translateY(-3px);
-    box-shadow: 0 12px 30px rgba(0,0,0,0.55), 0 0 20px rgba(217,186,132,0.05);
-    background: rgba(217,186,132,0.04);
-  }
-  .hb-qa:hover .hb-qa-ico { box-shadow: 0 0 18px rgba(217,186,132,0.2); }
-  .hb-qa-ico {
-    width: 40px; height: 40px; border-radius: 12px;
-    background: rgba(217,186,132,0.1); border: 1px solid rgba(217,186,132,0.18);
-    display: flex; align-items: center; justify-content: center; color: #D9BA84;
-    transition: box-shadow 0.25s;
-  }
-  .hb-qa-lbl { font-size: 12px; font-weight: 600; color: #fff; text-align: center; }
-
-  /* ── Section header ── */
-  .hb-sec-hdr {
-    display: flex; align-items: center; justify-content: space-between;
-    margin-bottom: 14px;
-  }
-  .hb-sec-title {
-    font-size: 13px; font-weight: 700; color: #fff;
-    display: flex; align-items: center; gap: 7px;
-  }
-  .hb-sec-title svg { color: #D9BA84; }
-  .hb-sec-label {
-    font-size: 10px; font-weight: 700; letter-spacing: 0.1em;
-    text-transform: uppercase; color: #a0a0b4;
-    display: flex; align-items: center; gap: 5px;
-    margin-bottom: 14px;
-  }
-  .hb-sec-label::after { content: ''; flex: 1; height: 1px; background: rgba(217,186,132,0.1); }
-  .hb-see-all {
-    font-size: 11px; color: #D9BA84; font-weight: 600;
-    display: flex; align-items: center; gap: 3px;
-    background: none; border: none; cursor: pointer;
-    font-family: 'Sora', sans-serif; transition: opacity 0.15s;
-  }
-  .hb-see-all:hover { opacity: 0.65; }
-
-  /* ── Bottom 2-col ── */
-  .hb-bottom-grid {
-    display: grid; grid-template-columns: 1fr 1fr;
-    gap: 16px;
-  }
-  @media(max-width:720px){ .hb-bottom-grid{ grid-template-columns:1fr; } }
-
-  /* ── Notifications ── */
-  .hb-notif-item {
-    display: flex; align-items: flex-start; gap: 11px;
-    padding: 11px 13px; border-radius: 12px;
-    border: 1px solid transparent;
-    cursor: pointer; transition: background 0.2s, border-color 0.2s;
-    margin-bottom: 3px;
-  }
-  .hb-notif-item:hover { background: rgba(217,186,132,0.04); border-color: rgba(217,186,132,0.12); }
-  .hb-notif-ico {
-    width: 30px; height: 30px; border-radius: 8px; flex-shrink: 0;
-    background: rgba(217,186,132,0.09); display: flex; align-items: center; justify-content: center;
-  }
-  .hb-notif-title { font-size: 13px; color: #fff; line-height: 1.35; }
-  .hb-notif-time { font-size: 11px; color: #a0a0b4; margin-top: 2px; }
-  .hb-notif-dot { width: 6px; height: 6px; border-radius: 50%; background: #D9BA84; flex-shrink: 0; margin-top: 5px; }
-
-  /* ── Contests ── */
-  .hb-contest-item {
-    padding: 14px 15px; border-radius: 14px;
-    background: #161616; border: 1px solid rgba(217,186,132,0.1);
-    margin-bottom: 10px; cursor: pointer;
-    transition: border-color 0.25s, transform 0.2s, box-shadow 0.2s;
-    position: relative; overflow: hidden;
-  }
-  .hb-contest-item::before {
-    content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
-    background: linear-gradient(180deg, #D9BA84, #c8b450);
-    opacity: 0; transition: opacity 0.25s;
-    border-radius: 3px 0 0 3px;
-  }
-  .hb-contest-item:hover { border-color: rgba(217,186,132,0.32); transform: translateX(4px); box-shadow: -4px 0 0 rgba(217,186,132,0.25); }
-  .hb-contest-item:hover::before { opacity: 1; }
-  .hb-contest-item:last-child { margin-bottom: 0; }
-  .hb-contest-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 7px; }
-  .hb-contest-cat {
-    font-size: 9px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
-    color: #c8b450; background: rgba(200,180,80,0.1); border: 1px solid rgba(200,180,80,0.2);
-    padding: 2px 7px; border-radius: 10px;
-  }
-  .hb-hot {
-    display: flex; align-items: center; gap: 3px;
-    font-size: 9px; font-weight: 700; color: #D9BA84;
-    background: rgba(217,186,132,0.1); border: 1px solid rgba(217,186,132,0.2);
-    padding: 2px 7px; border-radius: 10px;
-  }
-  .hb-contest-title { font-size: 14px; font-weight: 600; color: #fff; margin-bottom: 8px; }
-  .hb-contest-meta { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-  .hb-contest-prize { font-size: 12px; color: #D9BA84; font-weight: 600; display: flex; align-items: center; gap: 4px; }
-  .hb-contest-info  { font-size: 11px; color: #a0a0b4; display: flex; align-items: center; gap: 4px; }
-  .hb-enter-btn {
-    display: inline-flex; align-items: center; gap: 5px; margin-top: 9px;
-    padding: 5px 12px; border-radius: 8px; border: none; cursor: pointer;
-    font-size: 11px; font-weight: 700; font-family: 'Sora', sans-serif;
-    background: linear-gradient(135deg, #D9BA84, #c8b450); color: #000;
-    transition: opacity 0.2s, transform 0.15s;
-  }
-  .hb-enter-btn:hover { opacity: 0.88; transform: scale(1.04); }
-
-  /* ── Activity feed ── */
-  .hb-activity-item {
-    display: flex; align-items: flex-start; gap: 11px;
-    padding: 10px 13px; border-radius: 12px;
-    border: 1px solid transparent;
-    transition: background 0.2s, border-color 0.2s;
-    cursor: default; margin-bottom: 3px;
-  }
-  .hb-activity-item:hover { background: rgba(217,186,132,0.04); border-color: rgba(217,186,132,0.1); }
-  .hb-activity-ico {
-    width: 28px; height: 28px; border-radius: 8px; flex-shrink: 0;
-    background: rgba(217,186,132,0.08); border: 1px solid rgba(217,186,132,0.12);
-    display: flex; align-items: center; justify-content: center; color: #D9BA84;
-  }
-  .hb-activity-label { font-size: 13px; color: #fff; line-height: 1.35; }
-  .hb-activity-time  { font-size: 11px; color: #a0a0b4; margin-top: 2px; }
-  .hb-activity-line {
-    width: 1px; background: rgba(217,186,132,0.1); margin-left: 13px; height: 10px; margin-bottom: 3px;
-  }
-
-  /* ── Fade-up animation ── */
-  @keyframes hbFadeUp {
-    from { opacity: 0; transform: translateY(14px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-  .hb-a1 { animation: hbFadeUp 0.45s cubic-bezier(0.16,1,0.3,1) 0.00s both; }
-  .hb-a2 { animation: hbFadeUp 0.45s cubic-bezier(0.16,1,0.3,1) 0.06s both; }
-  .hb-a3 { animation: hbFadeUp 0.45s cubic-bezier(0.16,1,0.3,1) 0.12s both; }
-  .hb-a4 { animation: hbFadeUp 0.45s cubic-bezier(0.16,1,0.3,1) 0.18s both; }
-  .hb-a5 { animation: hbFadeUp 0.45s cubic-bezier(0.16,1,0.3,1) 0.24s both; }
-  .hb-a6 { animation: hbFadeUp 0.45s cubic-bezier(0.16,1,0.3,1) 0.30s both; }
-`;
-
-
+// ─── Main component ───────────────────────────────────────────────────────────
 export default function HomeBasic() {
   const { member, loading } = useMemberData();
-  const [tokens, setTokens] = useState(member?.tokens || 0);
+  const [tokens, setTokens] = useState(0);
   const [notifs, setNotifs] = useState(NOTIFICATIONS);
 
-  useEffect(() => {
-    setTokens(member?.tokens || 0);
-  }, [member]);
+  useEffect(() => { if (member) setTokens(member.tokens); }, [member]);
 
+  // Simulate live token updates
   useEffect(() => {
     const t = setInterval(() => setTokens(v => v + Math.floor(Math.random() * 3)), 4500);
     return () => clearInterval(t);
@@ -524,85 +196,254 @@ export default function HomeBasic() {
     setNotifs(ns => ns.map(n => n.id === id ? { ...n, unread: false } : n));
 
   if (loading) {
-    return <div className="hb-root"><style>{styles}</style><div className="hb-page"><div className="hb-welcome hb-a1"><div>Loading...</div></div></div></div>;
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center font-sora">
+        <div className="text-[#a0a0b4] text-sm">Loading...</div>
+      </div>
+    );
   }
   if (!member) {
     return (
-      <div className="hb-root">
-        <style>{styles}</style>
-        <div className="hb-page">
-          <div className="hb-welcome hb-a1">
-            <div className="text-red-400 text-lg font-bold">User profile not found.<br/>Please contact support or try signing up again.</div>
-          </div>
+      <div className="min-h-screen bg-black flex items-center justify-center font-sora p-6">
+        <div className="text-red-400 text-base font-bold text-center">
+          User profile not found.<br />Please contact support or try signing up again.
         </div>
       </div>
     );
   }
 
   return (
-    <div className="hb-root">
-      <style>{styles}</style>
-      <div className="hb-page">
+    <div className="min-h-full bg-black text-white font-sora" style={{
+      background: "radial-gradient(ellipse 60% 35% at 5% 0%, rgba(217,186,132,0.06) 0%, transparent 55%), radial-gradient(ellipse 50% 30% at 95% 100%, rgba(200,180,80,0.04) 0%, transparent 50%), #000",
+    }}>
+      <style>{animations}</style>
+      <div className="max-w-[1100px] px-4 sm:px-6 lg:px-7 py-6 pb-16">
+
         {/* ── Welcome ── */}
-        <div className="hb-welcome hb-a1">
+        <div className="fu1 flex items-end justify-between flex-wrap gap-3 mb-6">
           <div>
-            <div className="hb-greet-tag">Member Dashboard</div>
-            <div className="hb-name">Hey, {member.name?.split(" ")[0]} 👋</div>
-            <div className="hb-sub">Here's what's happening in your club today.</div>
+            <div className="flex items-center gap-2 text-[10px] font-bold tracking-[0.12em] uppercase text-[#D9BA84] mb-1.5">
+              <span className="w-4 h-px bg-[#D9BA84]" />
+              Member Dashboard
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white leading-tight">
+              Hey, {member.name?.split(" ")[0]} 👋
+            </h1>
+            <p className="text-[13px] text-[#a0a0b4] mt-1">Here's what's happening in your club today.</p>
           </div>
-          <div className="hb-active-pill">
-            <div className="hb-pulse" /> Membership Active
+          <div className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#D9BA84]/8 border border-[#D9BA84]/20 text-[12px] font-semibold text-[#D9BA84]">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#D9BA84] shadow-[0_0_6px_rgba(217,186,132,0.6)] animate-dot-pulse" />
+            Membership Active
           </div>
         </div>
-        {/* ...existing code for cards, stats, quick actions, notifications, contests, activity, using member data where needed... */}
-        {/* Membership + Token */}
-        <div className="hb-top-grid hb-a2">
+
+        {/* ── Membership + Token grid ── */}
+        <div className="fu2 grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-4 mb-4">
+
           {/* Membership card */}
-          <div className="hb-member-card">
-            <div className="hb-mc-glow" />
-            <div className="hb-mc-pattern" />
-            <div className="hb-mc-top">
-              <div className="hb-mc-tier"><Star size={11} /> {member.tier}</div>
-              <div className="hb-mc-verified"><CheckCircle size={13} /> Verified Member</div>
-            </div>
-            <div className="hb-mc-body">
-              <div>
-                <div className="hb-mc-name">{member.name}</div>
-                <div className="hb-mc-car"><Car size={12} /> {member.car}</div>
-                <div className="hb-mc-id"><Hash size={12} />{member.id}</div>
-                <div className="hb-mc-since">Member since {member.since}</div>
+          <div className="relative overflow-hidden rounded-2xl border border-[#D9BA84]/18 bg-[#0d0d0d] p-5 sm:p-6 transition-all duration-250 hover:border-[#D9BA84]/40 hover:-translate-y-0.5 hover:shadow-[0_16px_48px_rgba(0,0,0,0.7)]">
+            {/* Glow */}
+            <div className="absolute -top-12 -right-12 w-56 h-56 rounded-full pointer-events-none"
+              style={{ background: "radial-gradient(circle, rgba(217,186,132,0.07) 0%, transparent 70%)" }} />
+            {/* Stripe pattern */}
+            <div className="absolute inset-0 pointer-events-none opacity-[0.03]"
+              style={{ backgroundImage: "repeating-linear-gradient(45deg, #D9BA84 0px, #D9BA84 1px, transparent 1px, transparent 14px)" }} />
+
+            {/* Top row */}
+            <div className="relative flex items-center justify-between mb-5">
+              <div className="inline-flex items-center gap-1.5 bg-[#D9BA84]/10 border border-[#D9BA84]/22 px-3 py-1 rounded-full text-[11px] font-bold tracking-wide text-[#D9BA84]">
+                <Star size={11} /> {member.tier}
               </div>
-              <div className="hb-mc-qr">
-                <FakeQR size={108} />
-                <div className="hb-mc-qr-lbl">Scan to verify</div>
+              <div className="flex items-center gap-1.5 text-[11px] font-semibold text-[#D9BA84]">
+                <CheckCircle size={13} /> Verified Member
+              </div>
+            </div>
+
+            {/* Body */}
+            <div className="relative flex items-end justify-between gap-4 flex-wrap">
+              <div>
+                <div className="text-[22px] font-extrabold tracking-tight mb-1">{member.name}</div>
+                <div className="flex items-center gap-1.5 text-[12px] text-[#a0a0b4] mb-3">
+                  <Car size={12} /> {member.car || "No vehicle listed"}
+                </div>
+                <div className="inline-flex items-center gap-1.5 bg-[#D9BA84]/8 border border-[#D9BA84]/15 px-3 py-1.5 rounded-[9px] text-[12px] text-[#D9BA84] font-code">
+                  <Hash size={12} />{member.id.slice(0, 16)}…
+                </div>
+                <div className="text-[11px] text-[#a0a0b4] mt-2">Member since {member.since}</div>
+              </div>
+
+              {/* QR */}
+              <div className="flex flex-col items-center gap-1.5 bg-[#D9BA84]/5 border border-[#D9BA84]/15 rounded-[14px] p-3 flex-shrink-0">
+                <FakeQR size={90} />
+                <span className="text-[9px] font-bold tracking-[0.1em] uppercase text-[#a0a0b4]">Scan to verify</span>
               </div>
             </div>
           </div>
-          {/* Token balance card */}
-          <div className="hb-token-card">
-            <div className="hb-sec-label" style={{ alignSelf: "flex-start", width: "100%" }}>
-              Token Balance
-            </div>
-            <div className="hb-token-ring-wrap">
+
+          {/* Token card */}
+          <Card className="flex flex-col items-center text-center p-5">
+            <SectionLabel>Token Balance</SectionLabel>
+            <div className="relative mb-2">
               <TokenRing value={tokens} max={member.nextReward} />
-              <div className="hb-token-center">
-                <div className="hb-token-val">{tokens.toLocaleString()}</div>
-                <div className="hb-token-unit">tokens</div>
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <span className="text-[20px] font-extrabold text-[#D9BA84] font-code leading-none">{tokens.toLocaleString()}</span>
+                <span className="text-[9px] font-semibold uppercase tracking-wide text-[#a0a0b4]">tokens</span>
               </div>
             </div>
-            <div className="hb-token-title">WLA Tokens</div>
-            <div className="hb-token-sub">Live balance · updates every few seconds</div>
-            <div className="hb-token-next">
+            <div className="text-[14px] font-bold text-white mb-0.5">WLA Tokens</div>
+            <div className="text-[11px] text-[#a0a0b4] mb-2">Live balance · updates every few seconds</div>
+            <div className="px-3 py-1 rounded-full bg-[#D9BA84]/7 border border-[#D9BA84]/14 text-[10px] font-semibold text-[#D9BA84] mb-3">
               {(member.nextReward - tokens).toLocaleString()} until next reward tier
             </div>
-            <div className="hb-token-btns">
-              <button className="hb-btn-outline">Earn</button>
-              <button className="hb-btn-gold">Redeem</button>
+            <div className="flex gap-2 w-full mt-auto">
+              <button className="flex-1 py-2 rounded-[10px] border border-[#D9BA84]/20 bg-[#D9BA84]/5 text-[#D9BA84] text-[12px] font-semibold hover:bg-[#D9BA84]/12 hover:border-[#D9BA84]/35 transition-all font-sora">
+                Earn
+              </button>
+              <button className="flex-1 py-2 rounded-[10px] border-0 bg-gradient-to-br from-[#D9BA84] to-[#c8b450] text-black text-[12px] font-bold hover:opacity-90 transition-opacity font-sora">
+                Redeem
+              </button>
             </div>
+          </Card>
+        </div>
+
+        {/* ── Stats ── */}
+        <div className="fu3 grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+          {STATS.map((s, i) => {
+            const Icon = s.icon;
+            return (
+              <Card key={i} className="p-4">
+                <div className="w-8 h-8 rounded-[9px] bg-[#D9BA84]/9 border border-[#D9BA84]/14 flex items-center justify-center text-[#D9BA84] mb-3 transition-all group-hover:bg-[#D9BA84]/16">
+                  <Icon size={15} />
+                </div>
+                <div className="text-[26px] sm:text-[28px] font-extrabold text-white font-code tracking-tight leading-none">{s.value}</div>
+                <div className="text-[11px] text-[#a0a0b4] mt-1">{s.label}</div>
+              </Card>
+            );
+          })}
+        </div>
+
+        {/* ── Quick Actions ── */}
+        <div className="fu4 mb-4">
+          <SectionLabel>Quick Actions</SectionLabel>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {QUICK_ACTIONS.map((qa, i) => {
+              const Icon = qa.icon;
+              return (
+                <Link
+                  key={i}
+                  to={qa.to}
+                  className="flex flex-col items-center justify-center gap-2.5 py-5 px-3 bg-[#0d0d0d] border border-[#D9BA84]/13 rounded-2xl no-underline group transition-all duration-250 hover:border-[#D9BA84]/35 hover:-translate-y-[3px] hover:shadow-[0_12px_30px_rgba(0,0,0,0.55)] hover:bg-[#D9BA84]/4"
+                >
+                  <div className="w-10 h-10 rounded-[12px] bg-[#D9BA84]/10 border border-[#D9BA84]/18 flex items-center justify-center text-[#D9BA84] group-hover:shadow-[0_0_18px_rgba(217,186,132,0.2)] transition-shadow">
+                    <Icon size={18} />
+                  </div>
+                  <span className="text-[12px] font-semibold text-white text-center">{qa.label}</span>
+                </Link>
+              );
+            })}
           </div>
         </div>
-        {/* ...rest of the code for stats, quick actions, notifications, contests, activity... */}
-        {/* ...use member data where needed... */}
+
+        {/* ── Bottom: Notifications + Contests ── */}
+        <div className="fu5 grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+
+          {/* Notifications */}
+          <Card className="p-5">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2 text-[13px] font-bold text-white">
+                <Sparkles size={14} className="text-[#D9BA84]" /> Notifications
+              </div>
+              <button className="text-[11px] text-[#D9BA84] font-semibold flex items-center gap-0.5 hover:opacity-65 transition-opacity font-sora">
+                See all <ChevronRight size={10} />
+              </button>
+            </div>
+            <div className="flex flex-col gap-0.5">
+              {notifs.map(n => {
+                const Icon = n.icon;
+                return (
+                  <div
+                    key={n.id}
+                    className="flex items-start gap-2.5 px-3 py-2.5 rounded-xl border border-transparent cursor-pointer hover:bg-[#D9BA84]/4 hover:border-[#D9BA84]/12 transition-all"
+                    onClick={() => markRead(n.id)}
+                  >
+                    <div className={`w-[30px] h-[30px] rounded-[8px] flex items-center justify-center flex-shrink-0 bg-[#D9BA84]/9 ${n.color}`}>
+                      <Icon size={14} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className={`text-[13px] text-white leading-snug ${n.unread ? "font-semibold" : "font-normal"}`}>{n.title}</div>
+                      <div className="text-[11px] text-[#a0a0b4] mt-0.5">{n.time}</div>
+                    </div>
+                    {n.unread && <span className="w-1.5 h-1.5 rounded-full bg-[#D9BA84] mt-1.5 flex-shrink-0" />}
+                  </div>
+                );
+              })}
+            </div>
+          </Card>
+
+          {/* Active Contests */}
+          <Card className="p-5">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2 text-[13px] font-bold text-white">
+                <Trophy size={14} className="text-[#D9BA84]" /> Active Contests
+              </div>
+              <button className="text-[11px] text-[#D9BA84] font-semibold flex items-center gap-0.5 hover:opacity-65 transition-opacity font-sora">
+                See all <ChevronRight size={10} />
+              </button>
+            </div>
+            <div className="flex flex-col gap-2">
+              {CONTESTS.map(c => (
+                <div key={c.id} className="relative overflow-hidden px-3.5 py-3 rounded-[14px] bg-[#161616] border border-[#D9BA84]/10 cursor-pointer hover:border-[#D9BA84]/32 hover:translate-x-1 transition-all duration-200 group">
+                  {/* Left accent bar */}
+                  <span className="absolute left-0 top-0 bottom-0 w-[3px] rounded-r-[3px] bg-gradient-to-b from-[#D9BA84] to-[#c8b450] opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-[9px] font-bold tracking-[0.1em] uppercase text-[#c8b450] bg-[#c8b450]/10 border border-[#c8b450]/20 px-2 py-0.5 rounded-full">{c.category}</span>
+                    {c.hot && (
+                      <span className="flex items-center gap-1 text-[9px] font-bold text-[#D9BA84] bg-[#D9BA84]/10 border border-[#D9BA84]/20 px-2 py-0.5 rounded-full">
+                        <Flame size={9} /> Hot
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-[14px] font-semibold text-white mb-2">{c.title}</div>
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <span className="flex items-center gap-1 text-[12px] font-semibold text-[#D9BA84]"><Coins size={11} /> {c.prize}</span>
+                    <span className="flex items-center gap-1 text-[11px] text-[#a0a0b4]"><Clock size={10} /> {c.ends}</span>
+                    <span className="flex items-center gap-1 text-[11px] text-[#a0a0b4]"><Users size={10} /> {c.entries}</span>
+                  </div>
+                  <button className="mt-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-[8px] bg-gradient-to-br from-[#D9BA84] to-[#c8b450] text-black text-[11px] font-bold hover:opacity-88 hover:scale-[1.03] transition-all font-sora">
+                    <Zap size={10} /> Enter
+                  </button>
+                </div>
+              ))}
+            </div>
+          </Card>
+        </div>
+
+        {/* ── Recent Activity ── */}
+        <div className="fu6">
+          <SectionLabel>Recent Activity</SectionLabel>
+          <Card className="px-3 py-2">
+            {RECENT_ACTIVITY.map((a, i) => {
+              const Icon = a.icon;
+              return (
+                <div key={i}>
+                  <div className="flex items-start gap-2.5 px-3 py-2.5 rounded-xl border border-transparent hover:bg-[#D9BA84]/4 hover:border-[#D9BA84]/10 transition-all">
+                    <div className="w-7 h-7 rounded-[8px] flex items-center justify-center flex-shrink-0 bg-[#D9BA84]/8 border border-[#D9BA84]/12 text-[#D9BA84]">
+                      <Icon size={13} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[13px] text-white leading-snug">{a.label}</div>
+                      <div className="text-[11px] text-[#a0a0b4] mt-0.5">{a.time}</div>
+                    </div>
+                  </div>
+                  {i < RECENT_ACTIVITY.length - 1 && (
+                    <div className="ml-[28px] w-px h-2.5 bg-[#D9BA84]/10 mx-auto" style={{ marginLeft: "28px" }} />
+                  )}
+                </div>
+              );
+            })}
+          </Card>
+        </div>
+
       </div>
     </div>
   );

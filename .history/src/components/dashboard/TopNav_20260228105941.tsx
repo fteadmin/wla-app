@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Bell, ChevronRight, Calendar, Coins, Trophy, CheckCircle } from "lucide-react";
+import { Bell, ChevronRight, Calendar, Coins, Trophy, CheckCircle, Menu } from "lucide-react";
 
 interface Notification {
   id: number;
@@ -26,9 +26,10 @@ const notifConfig = {
 
 interface TopNavProps {
   tokens?: number;
+  onMenuClick?: () => void; // New prop to trigger sidebar
 }
 
-export default function TopNav({ tokens: tokensProp = 0 }: TopNavProps) {
+export default function TopNav({ tokens: tokensProp = 0, onMenuClick }: TopNavProps) {
   const [memberName, setMemberName]       = useState("");
   const [memberInitials, setMemberInitials] = useState("");
   const [tokens, setTokens]               = useState(tokensProp);
@@ -39,7 +40,7 @@ export default function TopNav({ tokens: tokensProp = 0 }: TopNavProps) {
   useEffect(() => {
     async function fetchProfile() {
       const { data: auth } = await supabase.auth.getUser();
-      if (!auth.user) return;
+      if (!auth?.user) return;
 
       let profile: { first_name?: string; last_name?: string; email?: string; tokens?: number } | null = null;
       const { data, error } = await supabase
@@ -47,15 +48,9 @@ export default function TopNav({ tokens: tokensProp = 0 }: TopNavProps) {
         .select("first_name,last_name,email,tokens")
         .eq("user_id", auth.user.id)
         .single();
+      
       if (!error && data) {
         profile = data;
-      } else {
-        const { data: p2, error: e2 } = await supabase
-          .from("user_profiles")
-          .select("first_name,last_name,email,tokens")
-          .eq("id", auth.user.id)
-          .single();
-        if (!e2 && p2) profile = p2;
       }
 
       const first = profile?.first_name || auth.user.user_metadata?.first_name || "";
@@ -79,6 +74,15 @@ export default function TopNav({ tokens: tokensProp = 0 }: TopNavProps) {
     <header className="sticky top-0 z-30 h-[60px] flex items-center px-3 sm:px-6 gap-2 sm:gap-4 bg-black/85 backdrop-blur-md border-b border-[#D9BA84]/12 font-sora flex-shrink-0"
       style={{ boxShadow: "inset 0 -1px 0 0 rgba(217,186,132,0.08)" }}>
 
+      {/* Mobile Hamburger Menu Button */}
+      <button 
+        onClick={onMenuClick}
+        className="lg:hidden p-2 -ml-2 text-[#a0a0b4] hover:text-[#D9BA84] transition-colors"
+        aria-label="Open Sidebar"
+      >
+        <Menu size={22} />
+      </button>
+
       {/* Divider */}
       <div className="hidden sm:block w-px h-6 bg-[#D9BA84]/15 flex-shrink-0" />
 
@@ -92,8 +96,7 @@ export default function TopNav({ tokens: tokensProp = 0 }: TopNavProps) {
 
       {/* Right cluster */}
       <div className="flex items-center gap-2">
-
-        {/* Token chip — hidden on mobile */}
+        {/* Token chip */}
         <div className="hidden sm:flex items-center gap-1.5 px-3 py-[5px] rounded-full bg-[#D9BA84]/8 border border-[#D9BA84]/18 cursor-default hover:bg-[#D9BA84]/12 hover:border-[#D9BA84]/35 transition-all">
           <span className="w-1.5 h-1.5 rounded-full bg-[#D9BA84] shadow-[0_0_6px_rgba(217,186,132,0.7)]" />
           <span className="text-[12px] font-bold text-[#D9BA84] font-code">{tokens.toLocaleString()}</span>
@@ -105,7 +108,6 @@ export default function TopNav({ tokens: tokensProp = 0 }: TopNavProps) {
           <button
             className="relative w-9 h-9 bg-[#161616] border border-[#D9BA84]/14 rounded-[10px] flex items-center justify-center text-[#a0a0b4] hover:border-[#D9BA84]/40 hover:text-[#D9BA84] hover:bg-[#D9BA84]/6 transition-all"
             onClick={() => setOpen(o => !o)}
-            aria-label="Notifications"
           >
             <Bell size={15} />
             {unread > 0 && (
@@ -116,53 +118,30 @@ export default function TopNav({ tokens: tokensProp = 0 }: TopNavProps) {
           </button>
 
           {open && (
-            <div className="absolute top-[46px] right-0 w-[290px] max-w-[calc(100vw-20px)] z-[200] bg-[#0d0d0d] border border-[#D9BA84]/20 rounded-2xl shadow-[0_24px_60px_rgba(0,0,0,0.85)] overflow-hidden animate-drop-in">
-              {/* Header */}
+            <div className="absolute top-[46px] right-0 w-[290px] max-w-[calc(100vw-20px)] z-[200] bg-[#0d0d0d] border border-[#D9BA84]/20 rounded-2xl shadow-[0_24px_60px_rgba(0,0,0,0.85)] overflow-hidden">
               <div className="flex items-center justify-between px-4 py-3 border-b border-[#D9BA84]/10">
                 <span className="text-[13px] font-bold text-white">Notifications</span>
-                {unread > 0 && (
-                  <span className="text-[10px] text-[#D9BA84] bg-[#D9BA84]/10 px-2 py-0.5 rounded-full font-bold">{unread} new</span>
-                )}
               </div>
-
-              {/* Items */}
               {notifs.map(n => {
                 const cfg = notifConfig[n.type];
                 const Ico = cfg.icon;
                 return (
-                  <div
-                    key={n.id}
-                    className="flex items-start gap-2.5 px-3.5 py-2.5 cursor-pointer border-b border-[#D9BA84]/5 last:border-0 hover:bg-[#D9BA84]/4 transition-colors"
-                    onClick={() => markRead(n.id)}
-                  >
-                    <div className={`w-7 h-7 rounded-[8px] flex items-center justify-center flex-shrink-0 bg-[#D9BA84]/10 ${cfg.color}`}>
-                      <Ico size={13} />
-                    </div>
+                  <div key={n.id} className="flex items-start gap-2.5 px-3.5 py-2.5 cursor-pointer border-b border-[#D9BA84]/5 hover:bg-[#D9BA84]/4" onClick={() => markRead(n.id)}>
+                    <div className={`w-7 h-7 rounded-[8px] flex items-center justify-center bg-[#D9BA84]/10 ${cfg.color}`}><Ico size={13} /></div>
                     <div className="flex-1 min-w-0">
                       <div className={`text-[12px] text-white leading-snug ${n.unread ? "font-semibold" : "font-normal"}`}>{n.title}</div>
                       <div className="text-[10px] text-[#a0a0b4] mt-0.5">{n.time}</div>
                     </div>
-                    {n.unread && <span className="w-1.5 h-1.5 rounded-full bg-[#D9BA84] mt-1 flex-shrink-0" />}
                   </div>
                 );
               })}
-
-              {/* Footer */}
-              <div className="px-4 py-2.5 border-t border-[#D9BA84]/8 text-center">
-                <button className="text-[11px] text-[#D9BA84] font-semibold inline-flex items-center gap-1 hover:opacity-70 transition-opacity font-sora">
-                  View all notifications <ChevronRight size={10} />
-                </button>
-              </div>
             </div>
           )}
         </div>
 
         {/* Avatar */}
-        <div
-          className="w-[34px] h-[34px] rounded-[10px] flex items-center justify-center text-[12px] font-bold text-[#D9BA84] font-code cursor-pointer border border-[#D9BA84]/30 hover:border-[#D9BA84]/50 transition-all"
-          style={{ background: "linear-gradient(135deg, rgba(217,186,132,0.2), rgba(200,180,80,0.1))" }}
-          title={memberName}
-        >
+        <div className="w-[34px] h-[34px] rounded-[10px] flex items-center justify-center text-[12px] font-bold text-[#D9BA84] font-code border border-[#D9BA84]/30"
+          style={{ background: "linear-gradient(135deg, rgba(217,186,132,0.2), rgba(200,180,80,0.1))" }}>
           {memberInitials}
         </div>
       </div>

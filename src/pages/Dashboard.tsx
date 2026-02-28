@@ -79,19 +79,21 @@ export default function Dashboard() {
   if (!role) return <div className="p-10 text-center">Loading role...</div>;
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex h-screen overflow-hidden bg-black">
       <SideNav
         active={active}
         memberName={memberName}
         memberInitials={memberInitials}
-        open={sidebarOpen || window.innerWidth >= 1024}
+        open={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
       />
-      <div className="flex-1 flex flex-col min-w-0">
-        <div className="sticky top-0 z-30">
-          <TopNav onMenuClick={() => setSidebarOpen((o) => !o)} />
-        </div>
-        <main className="flex-1 p-4 sm:p-6 md:p-8 lg:p-10">
+
+      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
+        <TopNav
+          onMenuClick={() => setSidebarOpen((o) => !o)}
+          sidebarOpen={sidebarOpen}
+        />
+        <main className="flex-1 overflow-y-auto">
           <Routes>
             <Route path="/" element={role === "admin" ? <AdminDashboard /> : <BasicDashboard />} />
             <Route path="marketplace" element={role === "admin" ? <MarketplaceAdmin /> : <MarketplaceBasic />} />
