@@ -31,30 +31,45 @@ export default function Login() {
         throw new Error(loginError?.message || "Login failed.");
       }
 
-      // Fetch user profile using user_id, fallback to id if needed
+      // Fetch user profile using maybeSingle to avoid 406 errors
       let profile: any = null;
       const { data: p, error: error1 } = await supabase
         .from("user_profiles")
         .select("role")
-        .eq("user_id", data.user.id)
-        .single();
+        .eq("id", data.user.id)
+        .maybeSingle();
 
       if (!error1 && p) {
         profile = p;
-      } else {
-        const { data: p2, error: error2 } = await supabase
-          .from("user_profiles")
-          .select("role")
-          .eq("id", data.user.id)
-          .single();
-        if (!error2 && p2) {
-          profile = p2;
-        }
       }
 
+      // If profile doesn't exist, create it automatically
       if (!profile) {
-        console.error("Profile fetch failed. user_id:", data.user.id);
-        throw new Error("User profile not found. Please contact support.");
+        console.log("Profile not found, creating one for user:", data.user.id);
+        const firstName = data.user.user_metadata?.first_name || "";
+        const lastName = data.user.user_metadata?.last_name || "";
+        const userEmail = data.user.email || "";
+        
+        const { data: newProfile, error: createError } = await supabase
+          .from("user_profiles")
+          .insert({
+            id: data.user.id,
+            first_name: firstName,
+            last_name: lastName,
+            email: userEmail,
+            role: "basic",
+            tokens: 0
+          })
+          .select("role")
+          .maybeSingle();
+
+        if (createError) {
+          console.error("Failed to create profile:", createError);
+          console.error("Error details:", JSON.stringify(createError, null, 2));
+          throw new Error("Could not create user profile. Please contact support.");
+        }
+
+        profile = newProfile;
       }
 
       if (profile.role === "admin") {

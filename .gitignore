@@ -49,3 +49,7 @@ index.html
 pages/
 
 
+#md files 
+*.md
+STRIPE_README.md
+MIGRATION_INSTRUCTIONS.md

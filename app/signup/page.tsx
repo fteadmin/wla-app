@@ -51,10 +51,10 @@ export default function Signup() {
 
 			if (signUpError || !data?.user) throw new Error(signUpError?.message || "Sign up failed.");
 
-			// Insert user profile with correct user_id
+			// Insert user profile
 			const { error: profileError } = await supabase.from("user_profiles").insert([
 				{
-					user_id: data.user.id,
+					id: data.user.id,
 					role: tier,
 					first_name: firstName,
 					last_name: lastName,

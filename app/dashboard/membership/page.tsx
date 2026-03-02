@@ -1,13 +1,13 @@
 
 "use client";
-import React, { useState } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { 
-  Shield, CheckCircle, Lock
+  Shield, CheckCircle, Lock, Loader
 } from "lucide-react";
 import { loadStripe } from "@stripe/stripe-js";
-import { Elements } from "@stripe/react-stripe-js";
-
-const stripePromise = loadStripe("pk_test_YOUR_STRIPE_PUBLISHABLE_KEY");
+import { Elements, useStripe, useElements, CardNumberElement, CardExpiryElement, CardCvcElement } from "@stripe/react-stripe-js";
+import { supabase } from "@/integrations/supabase/client";
+import QRCode from "qrcode";
 
 const PLAN = {
   name: "Basic Membership",
@@ -47,13 +47,202 @@ const styles = `
 `;
 
 function MembershipStripeModal({ onClose, onSuccess }) {
+  const stripe = useStripe();
+  const elements = useElements();
+  const [name, setName] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handlePayment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!stripe || !elements) {
+      setError("Stripe is not loaded yet. Please wait and try again.");
+      return;
+    }
+
+    if (!name.trim()) {
+      setError("Please enter cardholder name");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Please log in");
+
+      // Create payment intent
+      const res = await fetch("/api/membership-payment-intent", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: user.id, email: user.email }),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Payment setup failed");
+      }
+
+      const { clientSecret } = await res.json();
+      if (!clientSecret) throw new Error("Invalid payment session");
+
+      // Confirm payment
+      const cardElement = elements.getElement(CardNumberElement);
+      if (!cardElement) throw new Error("Card information is required");
+
+      const { error: stripeError, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
+        payment_method: {
+          card: cardElement,
+          billing_details: { name, email: user.email },
+        },
+      });
+
+      if (stripeError) throw new Error(stripeError.message || "Payment failed");
+      if (!paymentIntent || paymentIntent.status !== "succeeded") {
+        throw new Error("Payment was not completed");
+      }
+
+      // Generate membership ID and QR
+      const membershipId = `WLA-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
+      const qrData = JSON.stringify({
+        membershipId,
+        userId: user.id,
+        email: user.email,
+        tier: "basic",
+        activated: new Date().toISOString()
+      });
+      const qrUrl = await QRCode.toDataURL(qrData);
+
+      // Update user profile
+      const { error: updateError } = await supabase
+        .from("user_profiles")
+        .update({
+          membership_id: membershipId,
+          membership_status: "active",
+          membership_tier: "basic",
+          qr_code: qrUrl,
+          payment_date: new Date().toISOString(),
+          membership_expires: null,
+        })
+        .eq("id", user.id);
+
+      if (updateError) throw new Error("Failed to activate membership");
+
+      // Record payment
+      await supabase.from("membership_payments").insert({
+        user_id: user.id,
+        amount: 2000,
+        stripe_payment_id: paymentIntent.id,
+        membership_tier: "basic",
+        status: "completed",
+      });
+
+      onSuccess();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Payment failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-80 backdrop-blur-sm">
-      <div className="bg-white rounded-lg p-8 max-w-sm w-full text-center text-gray-900">
-        <div className="mb-4 font-bold text-lg">Stripe Checkout</div>
-        <p className="text-sm text-gray-600 mb-6">This is a simulated Stripe Elements field.</p>
-        <button className="w-full bg-yellow-400 text-black px-4 py-2 rounded mb-2 font-bold" onClick={onSuccess}>Pay $20.00</button>
-        <button className="w-full bg-gray-200 text-gray-800 px-4 py-2 rounded font-semibold" onClick={onClose}>Cancel</button>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-90 backdrop-blur-sm p-4">
+      <div className="bg-[#161616] border border-yellow-400/30 rounded-2xl p-8 max-w-md w-full">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-2xl font-bold text-white">Complete Payment</h3>
+          <button onClick={onClose} className="text-gray-400 hover:text-white">
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        {error && (
+          <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 mb-4 text-red-300 text-sm">
+            {error}
+          </div>
+        )}
+
+        <form onSubmit={handlePayment} className="space-y-4">
+          <div>
+            <label className="block text-sm font-semibold text-white mb-2">Cardholder Name</label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="John Doe"
+              className="w-full bg-black/40 border border-yellow-400/30 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-yellow-400"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-white mb-2">Card Number</label>
+            <div className="bg-black/40 border border-yellow-400/30 rounded-lg px-4 py-3">
+              <CardNumberElement
+                options={{
+                  style: {
+                    base: { color: "#ffffff", fontSize: "16px", "::placeholder": { color: "#6b7280" } },
+                    invalid: { color: "#ef4444" },
+                  },
+                }}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-semibold text-white mb-2">Expiry</label>
+              <div className="bg-black/40 border border-yellow-400/30 rounded-lg px-4 py-3">
+                <CardExpiryElement
+                  options={{
+                    style: {
+                      base: { color: "#ffffff", fontSize: "16px", "::placeholder": { color: "#6b7280" } },
+                      invalid: { color: "#ef4444" },
+                    },
+                  }}
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-white mb-2">CVC</label>
+              <div className="bg-black/40 border border-yellow-400/30 rounded-lg px-4 py-3">
+                <CardCvcElement
+                  options={{
+                    style: {
+                      base: { color: "#ffffff", fontSize: "16px", "::placeholder": { color: "#6b7280" } },
+                      invalid: { color: "#ef4444" },
+                    },
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading || !stripe}
+            className="w-full bg-gradient-to-r from-yellow-400 to-yellow-500 text-black font-bold py-4 rounded-lg hover:from-yellow-500 hover:to-yellow-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          >
+            {loading ? (
+              <>
+                <Loader size={20} className="animate-spin" />
+                Processing...
+              </>
+            ) : (
+              <>
+                <Shield size={20} />
+                Pay $20.00
+              </>
+            )}
+          </button>
+
+          <p className="text-center text-xs text-gray-400 pt-2">
+            <Shield size={12} className="inline mr-1" />
+            Secured by Stripe
+          </p>
+        </form>
       </div>
     </div>
   );
@@ -66,6 +255,47 @@ export default function MembershipBasic() {
   const [showSuccess, setShowSuccess] = useState(false);
   const [showStripeModal, setShowStripeModal] = useState(false);
   const [nextBill, setNextBill] = useState("");
+
+  // Initialize Stripe with environment variable
+  const stripePromise = useMemo(() => {
+    const stripeKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
+    console.log("🔑 Loading Stripe for dashboard...");
+    if (!stripeKey) {
+      console.error("❌ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY not found!");
+      return null;
+    }
+    return loadStripe(stripeKey);
+  }, []);
+
+  // Check if user already has membership
+  useEffect(() => {
+    async function checkMembership() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: profile } = await supabase
+        .from("user_profiles")
+        .select("membership_status, membership_expires")
+        .eq("id", user.id)
+        .single();
+
+      if (profile?.membership_status === "active") {
+        setSubscribed(true);
+        if (profile.membership_expires) {
+          setNextBill(new Date(profile.membership_expires).toLocaleDateString("en-US", { 
+            month: "long", day: "numeric", year: "numeric" 
+          }));
+        } else {
+          const nextYear = new Date();
+          nextYear.setFullYear(nextYear.getFullYear() + 1);
+          setNextBill(nextYear.toLocaleDateString("en-US", { 
+            month: "long", day: "numeric", year: "numeric" 
+          }));
+        }
+      }
+    }
+    checkMembership();
+  }, []);
 
   const handleStripeSuccess = () => {
     const d = new Date();
@@ -81,6 +311,20 @@ export default function MembershipBasic() {
       setSubscribed(false);
     }
   };
+
+  if (!stripePromise) {
+    return (
+      <div className="min-h-screen bg-black text-white flex flex-col font-sora">
+        <TopNav />
+        <main className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <p className="text-red-400 mb-2">Stripe configuration error</p>
+            <p className="text-sm text-gray-400">Check your environment variables</p>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-black text-white flex flex-col font-sora">

@@ -1,9 +1,180 @@
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { Shield, QrCode, Hash, CheckCircle, Users, Calendar, TrendingUp, Settings } from "lucide-react";
+
 export default function HomeAdmin() {
+  const [membershipData, setMembershipData] = useState<{
+    membershipId: string | null;
+    qrCode: string | null;
+    membershipStatus: string | null;
+    email: string | null;
+  } | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchMembershipData() {
+      const { data: auth } = await supabase.auth.getUser();
+      if (!auth.user) return;
+
+      const { data: profile } = await supabase
+        .from("user_profiles")
+        .select("membership_id, qr_code, membership_status")
+        .eq("id", auth.user.id)
+        .single();
+
+      setMembershipData({
+        membershipId: profile?.membership_id || null,
+        qrCode: profile?.qr_code || null,
+        membershipStatus: profile?.membership_status || null,
+        email: auth.user.email || null,
+      });
+      setLoading(false);
+    }
+    fetchMembershipData();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#000000] flex items-center justify-center">
+        <div className="text-[#a0a0b4] text-sm">Loading...</div>
+      </div>
+    );
+  }
+
   return (
-    <div>
-      <h1 className="text-4xl font-bold mb-4">Admin Dashboard - WLA Cruiser Club</h1>
-      <p className="mb-2">Manage members, events, and content for the community.</p>
-      <p>Access all admin tools and analytics here.</p>
+    <div className="min-h-screen bg-[#000000] text-white p-6">
+      <div className="max-w-6xl mx-auto">
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-[#D9BA84] mb-2">
+            <Settings size={16} />
+            <span>Admin Dashboard</span>
+          </div>
+          <h1 className="text-4xl font-bold mb-2">WLA Cruiser Club</h1>
+          <p className="text-[#a0a0b4]">Manage members, events, and content for the community.</p>
+        </div>
+
+        {/* Admin Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div className="bg-[#0d0d0d] border border-[#D9BA84]/13 rounded-2xl p-6">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 rounded-xl bg-[#D9BA84]/10 border border-[#D9BA84]/20 flex items-center justify-center">
+                <Users size={20} className="text-[#D9BA84]" />
+              </div>
+              <div>
+                <div className="text-2xl font-bold">247</div>
+                <div className="text-xs text-[#a0a0b4]">Total Members</div>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-[#0d0d0d] border border-[#D9BA84]/13 rounded-2xl p-6">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 rounded-xl bg-[#D9BA84]/10 border border-[#D9BA84]/20 flex items-center justify-center">
+                <Calendar size={20} className="text-[#D9BA84]" />
+              </div>
+              <div>
+                <div className="text-2xl font-bold">12</div>
+                <div className="text-xs text-[#a0a0b4]">Upcoming Events</div>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-[#0d0d0d] border border-[#D9BA84]/13 rounded-2xl p-6">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 rounded-xl bg-[#D9BA84]/10 border border-[#D9BA84]/20 flex items-center justify-center">
+                <TrendingUp size={20} className="text-[#D9BA84]" />
+              </div>
+              <div>
+                <div className="text-2xl font-bold">89%</div>
+                <div className="text-xs text-[#a0a0b4]">Engagement Rate</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Admin Membership Card */}
+        {membershipData?.membershipStatus === "active" && membershipData.qrCode && (
+          <div className="bg-[#0d0d0d] border border-[#D9BA84]/18 rounded-2xl p-6 mb-6">
+            <div className="flex items-center gap-2 mb-4">
+              <Shield size={20} className="text-[#D9BA84]" />
+              <h2 className="text-xl font-bold">Your Admin Membership</h2>
+            </div>
+
+            <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
+              {/* QR Code */}
+              <div className="flex flex-col items-center gap-3 bg-[#D9BA84]/5 border border-[#D9BA84]/15 rounded-xl p-4">
+                <img 
+                  src={membershipData.qrCode} 
+                  alt="Admin Membership QR Code" 
+                  className="w-32 h-32 rounded-lg"
+                />
+                <div className="text-center">
+                  <div className="text-sm font-bold text-[#D9BA84] mb-1">
+                    {membershipData.membershipId}
+                  </div>
+                  <div className="text-xs text-[#a0a0b4]">Admin Access</div>
+                </div>
+              </div>
+
+              {/* Membership Info */}
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-4">
+                  <CheckCircle size={16} className="text-[#D9BA84]" />
+                  <span className="text-sm font-semibold text-[#D9BA84]">Active Membership</span>
+                </div>
+                
+                <div className="space-y-3">
+                  <div>
+                    <div className="text-xs text-[#a0a0b4] mb-1">Membership ID</div>
+                    <div className="flex items-center gap-2 bg-[#D9BA84]/8 border border-[#D9BA84]/15 px-3 py-2 rounded-lg text-sm font-mono">
+                      <Hash size={14} className="text-[#D9BA84]" />
+                      {membershipData.membershipId}
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="text-xs text-[#a0a0b4] mb-1">Account Email</div>
+                    <div className="text-sm text-white">{membershipData.email}</div>
+                  </div>
+
+                  <div>
+                    <div className="text-xs text-[#a0a0b4] mb-1">Access Level</div>
+                    <div className="inline-flex items-center gap-1.5 bg-[#D9BA84]/10 border border-[#D9BA84]/20 px-3 py-1 rounded-full text-xs font-bold text-[#D9BA84]">
+                      <Shield size={12} />
+                      Full Admin Access
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Admin Tools */}
+        <div className="bg-[#0d0d0d] border border-[#D9BA84]/13 rounded-2xl p-6">
+          <h2 className="text-xl font-bold mb-4">Admin Tools</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <button className="bg-[#D9BA84]/5 border border-[#D9BA84]/15 rounded-xl p-4 text-left hover:bg-[#D9BA84]/10 hover:border-[#D9BA84]/30 transition-all">
+              <div className="font-semibold mb-1">Member Management</div>
+              <div className="text-xs text-[#a0a0b4]">View and manage all club members</div>
+            </button>
+            <button className="bg-[#D9BA84]/5 border border-[#D9BA84]/15 rounded-xl p-4 text-left hover:bg-[#D9BA84]/10 hover:border-[#D9BA84]/30 transition-all">
+              <div className="font-semibold mb-1">Event Management</div>
+              <div className="text-xs text-[#a0a0b4]">Create and manage club events</div>
+            </button>
+            <button className="bg-[#D9BA84]/5 border border-[#D9BA84]/15 rounded-xl p-4 text-left hover:bg-[#D9BA84]/10 hover:border-[#D9BA84]/30 transition-all">
+              <div className="font-semibold mb-1">Content Moderation</div>
+              <div className="text-xs text-[#a0a0b4]">Review and approve member content</div>
+            </button>
+            <button className="bg-[#D9BA84]/5 border border-[#D9BA84]/15 rounded-xl p-4 text-left hover:bg-[#D9BA84]/10 hover:border-[#D9BA84]/30 transition-all">
+              <div className="font-semibold mb-1">Analytics & Reports</div>
+              <div className="text-xs text-[#a0a0b4]">View detailed club statistics</div>
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
+

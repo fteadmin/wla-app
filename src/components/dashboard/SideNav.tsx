@@ -1,12 +1,13 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   Home, ShoppingBag, Trophy, Upload, CreditCard, Coins,
   ChevronRight, Car, LogOut, Settings, Menu, X
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
 
 const NAV_ITEMS = [
   { key: "dashboard",       label: "Home",            icon: Home,        to: "/dashboard"                 },
@@ -32,8 +33,26 @@ export default function SideNav({
 }: SideNavProps) {
 
   const pathname = usePathname();
+  const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
   const currentActive = active || pathname.split("/dashboard/")[1] || "dashboard";
+
+  // Auto-close on route change for mobile
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [pathname]);
+
+  const handleSignOut = async () => {
+    setSigningOut(true);
+    try {
+      await supabase.auth.signOut();
+      router.push("/login");
+    } catch (error) {
+      console.error("Error signing out:", error);
+      setSigningOut(false);
+    }
+  };
 
   // Auto-close on route change for mobile
   useEffect(() => {
@@ -121,8 +140,13 @@ export default function SideNav({
               <p className="text-[9px] text-[#D9BA84] mt-1">{memberTier}</p>
             </div>
           </div>
-          <button className="flex items-center gap-2.5 px-3 py-2 text-[13px] text-[#a0a0b4] hover:text-red-400 transition-colors w-full mt-1">
-            <LogOut size={14} /> Sign Out
+          <button 
+            onClick={handleSignOut}
+            disabled={signingOut}
+            className="flex items-center gap-2.5 px-3 py-2 text-[13px] text-[#a0a0b4] hover:text-red-400 transition-colors w-full mt-1 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <LogOut size={14} className={signingOut ? "animate-spin" : ""} /> 
+            {signingOut ? "Signing Out..." : "Sign Out"}
           </button>
         </div>
       </aside>

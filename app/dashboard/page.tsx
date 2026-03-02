@@ -42,7 +42,7 @@ export default function Dashboard() {
 				const { data: profileData, error } = await supabase
 					.from("user_profiles")
 					.select("role, tokens")
-					.eq("user_id", String(data.user.id))
+					.eq("id", String(data.user.id))
 					.maybeSingle();
 
 				if (error) {

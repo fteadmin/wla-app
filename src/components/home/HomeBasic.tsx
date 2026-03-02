@@ -27,6 +27,7 @@ function useMemberData() {
   const [member, setMember] = useState<{
     name: string; id: string; tier: string; since: string;
     avatar: string; car: string; tokens: number; nextReward: number;
+    membershipId: string | null; qrCode: string | null; membershipStatus: string | null;
   } | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -37,25 +38,28 @@ function useMemberData() {
 
       let profile: Record<string, unknown> | null = null;
       const { data, error } = await supabase
-        .from("user_profiles").select("*").eq("user_id", auth.user.id).single();
+        .from("user_profiles")
+        .select("*")
+        .eq("id", auth.user.id)
+        .single();
+      
       if (!error && data) {
         profile = data as Record<string, unknown>;
-      } else {
-        const { data: p2, error: e2 } = await supabase
-          .from("user_profiles").select("*").eq("id", auth.user.id).single();
-        if (!e2 && p2) profile = p2 as Record<string, unknown>;
       }
 
       const firstName = (profile?.first_name as string) || auth.user.user_metadata?.first_name || "";
       setMember({
-        name:       firstName,
-        id:         (profile?.id as string)         || auth.user.id,
-        tier:       (profile?.role as string)        || "Member",
-        since:      profile?.created_at ? new Date(profile.created_at as string).toLocaleDateString() : "",
-        avatar:     firstName[0]?.toUpperCase()      || "?",
-        car:        (profile?.car as string)         || "",
-        tokens:     (profile?.tokens as number)      || 0,
-        nextReward: 5000,
+        name:             firstName,
+        id:               (profile?.id as string)         || auth.user.id,
+        tier:             (profile?.role as string)       || "Member",
+        since:            profile?.created_at ? new Date(profile.created_at as string).toLocaleDateString() : "",
+        avatar:           firstName[0]?.toUpperCase()     || "?",
+        car:              (profile?.car as string)        || "",
+        tokens:           (profile?.tokens as number)     || 0,
+        nextReward:       5000,
+        membershipId:     (profile?.membership_id as string)     || null,
+        qrCode:           (profile?.qr_code as string)           || null,
+        membershipStatus: (profile?.membership_status as string) || null,
       });
       setLoading(false);
     }
@@ -256,10 +260,28 @@ export default function HomeBasic() {
                 <div className="text-[11px] text-[#a0a0b4] mt-2">Member since {member.since}</div>
               </div>
 
-              {/* QR */}
+              {/* QR Code - Show real membership QR if active, otherwise fake */}
               <div className="flex flex-col items-center gap-1.5 bg-[#D9BA84]/5 border border-[#D9BA84]/15 rounded-[14px] p-3 flex-shrink-0">
-                <FakeQR size={90} />
-                <span className="text-[9px] font-bold tracking-[0.1em] uppercase text-[#a0a0b4]">Scan to verify</span>
+                {member.membershipStatus === "active" && member.qrCode ? (
+                  <>
+                    <img 
+                      src={member.qrCode} 
+                      alt="Membership QR Code" 
+                      className="w-[90px] h-[90px] rounded-md"
+                    />
+                    <span className="text-[9px] font-bold tracking-[0.1em] uppercase text-[#D9BA84]">
+                      {member.membershipId}
+                    </span>
+                    <span className="text-[8px] font-semibold text-[#a0a0b4]">Active Member</span>
+                  </>
+                ) : (
+                  <>
+                    <FakeQR size={90} />
+                    <span className="text-[9px] font-bold tracking-[0.1em] uppercase text-[#a0a0b4]">
+                      {member.membershipStatus === "active" ? "Scan to verify" : "No membership"}
+                    </span>
+                  </>
+                )}
               </div>
             </div>
           </div>
