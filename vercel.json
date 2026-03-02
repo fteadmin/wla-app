@@ -1,5 +1,3 @@
 {
-  "rewrites": [
-    { "source": "/((?!api/).*)", "destination": "/index.html" }
-  ]
+  // Clean vercel.json for Next.js: no rewrites or outputDirectory needed
 }
