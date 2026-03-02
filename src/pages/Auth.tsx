@@ -1,12 +1,10 @@
 
+"use client";
 import { useState } from "react";
-import { useLocation } from "react-router-dom";
 
-export default function Auth() {
+
+export default function Auth({ mode = "login" }: { mode?: "login" | "signup" }) {
   const [tier, setTier] = useState<"basic" | "admin" | null>(null);
-  const location = useLocation();
-  const params = new URLSearchParams(location.search);
-  const mode = params.get("mode") === "signup" ? "signup" : "login";
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-primary/10 via-background to-secondary/10">

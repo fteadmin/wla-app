@@ -1,5 +1,7 @@
+"use client";
 import { useEffect, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   Home, ShoppingBag, Trophy, Upload, CreditCard, Coins,
   ChevronRight, Car, LogOut, Settings, Menu, X
@@ -28,14 +30,15 @@ export default function SideNav({
   memberInitials = "M",
   memberTier = "Gold Member",
 }: SideNavProps) {
-  const location = useLocation();
+
+  const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const currentActive = active || location.pathname.split("/dashboard/")[1] || "dashboard";
+  const currentActive = active || pathname.split("/dashboard/")[1] || "dashboard";
 
   // Auto-close on route change for mobile
   useEffect(() => {
     setMobileOpen(false);
-  }, [location.pathname]);
+  }, [pathname]);
 
   return (
     <>
@@ -89,8 +92,8 @@ export default function SideNav({
             const isActive = currentActive === item.key;
             return (
               <Link
-                key={item.key} 
-                to={item.to}
+                key={item.key}
+                href={item.to}
                 className={cn(
                   "relative flex items-center gap-2.5 px-3 py-[10px] rounded-xl text-[13px] font-medium border group transition-all duration-200 no-underline mb-0.5",
                   isActive ? "text-white bg-[#D9BA84]/10 border-[#D9BA84]/22" : "text-[#a0a0b4] border-transparent hover:text-white hover:bg-[#D9BA84]/6"

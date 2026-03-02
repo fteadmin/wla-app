@@ -1,10 +1,10 @@
-"use client";
 
+"use client";
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/integrations/supabase/client";
-import { LogIn, Shield, ArrowLeft, Sparkles, Mail, Lock } from "lucide-react";
+import { LogIn, Shield, ArrowLeft, Sparkles } from "lucide-react";
 
 export default function Login() {
   const [tier, setTier] = useState<"basic" | "admin" | null>(null);
@@ -31,16 +31,29 @@ export default function Login() {
         throw new Error(loginError?.message || "Login failed.");
       }
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data: rawProfile, error: profileError } = await (supabase as any)
+      // Fetch user profile using user_id, fallback to id if needed
+      let profile: any = null;
+      const { data: p, error: error1 } = await supabase
         .from("user_profiles")
         .select("role")
         .eq("user_id", data.user.id)
-        .maybeSingle();
-      const profile = rawProfile as { role: string } | null;
+        .single();
 
-      if (profileError || !profile) {
-        console.error("Profile fetch failed. user_id:", data.user.id, profileError);
+      if (!error1 && p) {
+        profile = p;
+      } else {
+        const { data: p2, error: error2 } = await supabase
+          .from("user_profiles")
+          .select("role")
+          .eq("id", data.user.id)
+          .single();
+        if (!error2 && p2) {
+          profile = p2;
+        }
+      }
+
+      if (!profile) {
+        console.error("Profile fetch failed. user_id:", data.user.id);
         throw new Error("User profile not found. Please contact support.");
       }
 
@@ -59,7 +72,6 @@ export default function Login() {
 
   return (
     <div className="min-h-screen w-full bg-black font-['Sora'] text-white flex items-center justify-center p-6 relative overflow-hidden">
-      
       {/* Shared Background: Grid & Glow */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-[-10%] left-[20%] w-[80%] h-[50%] bg-[#D9BA84]/10 blur-[120px] rounded-full" />
@@ -70,7 +82,6 @@ export default function Login() {
       </div>
 
       <div className="relative z-10 w-full max-w-[420px] bg-[#0d0d0d] border border-[#D9BA84]/15 rounded-[24px] p-9 shadow-[0_32px_64px_rgba(0,0,0,0.9)] animate-in fade-in zoom-in duration-300">
-        
         {/* Brand Header */}
         <div className="flex items-center gap-3 mb-6">
           <div className="w-10 h-10 bg-gradient-to-br from-[#D9BA84] to-[#C8B450] rounded-xl flex items-center justify-center shadow-[0_4px_16px_rgba(217,186,132,0.25)] flex-shrink-0">

@@ -1,3 +1,4 @@
+"use client";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Bell, ChevronRight, Calendar, Coins, Trophy, CheckCircle } from "lucide-react";
@@ -41,21 +42,15 @@ export default function TopNav({ tokens: tokensProp = 0 }: TopNavProps) {
       const { data: auth } = await supabase.auth.getUser();
       if (!auth.user) return;
 
-      let profile: { first_name?: string; last_name?: string; email?: string; tokens?: number } | null = null;
+      type UserProfileRow = import("@/integrations/supabase/types").Database["public"]["Tables"]["user_profiles"]["Row"];
+      let profile: UserProfileRow | null = null;
       const { data, error } = await supabase
         .from("user_profiles")
-        .select("first_name,last_name,email,tokens")
-        .eq("user_id", auth.user.id)
-        .single();
+        .select("id,first_name,last_name,email,role,tokens")
+        .eq("id", auth.user.id)
+        .maybeSingle<UserProfileRow>();
       if (!error && data) {
         profile = data;
-      } else {
-        const { data: p2, error: e2 } = await supabase
-          .from("user_profiles")
-          .select("first_name,last_name,email,tokens")
-          .eq("id", auth.user.id)
-          .single();
-        if (!e2 && p2) profile = p2;
       }
 
       const first = profile?.first_name || auth.user.user_metadata?.first_name || "";

@@ -1,10 +1,12 @@
+"use client";
+
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { ChevronRight } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useRouter } from "next/navigation";
 
 const HeroSection = () => {
-  const navigate = useNavigate();
+  const router = useRouter();
 
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
@@ -58,7 +60,7 @@ const HeroSection = () => {
             <Button
               size="lg"
               className="bg-primary text-primary-foreground hover:bg-primary/90 text-lg px-8 py-6 shadow-[0_0_30px_hsl(38_46%_68%_/_0.3)] hover:shadow-[0_0_50px_hsl(38_46%_68%_/_0.5)] transition-all duration-300"
-              onClick={() => navigate("/signup")}
+              onClick={() => router.push("/signup")}
             >
               Join WLA <ChevronRight className="ml-2 h-5 w-5" />
             </Button>

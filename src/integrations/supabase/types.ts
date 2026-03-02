@@ -16,13 +16,15 @@ export type Database = {
           last_name: string | null;
           email: string | null;
           tokens: number;
+          role: string;
         };
         Insert: {
-          id?: string;
+          id: string;
           first_name?: string | null;
           last_name?: string | null;
           email?: string | null;
           tokens?: number;
+          role?: string;
         };
         Update: {
           id?: string;
@@ -30,7 +32,9 @@ export type Database = {
           last_name?: string | null;
           email?: string | null;
           tokens?: number;
+          role?: string;
         };
+        Relationships: [];
       };
       token_purchases: {
         Row: {
@@ -39,6 +43,8 @@ export type Database = {
           amount: number;
           stripe_payment_id: string;
           created_at: string;
+          status: string;
+          token_id: string;
         };
         Insert: {
           id?: string;
@@ -46,6 +52,8 @@ export type Database = {
           amount: number;
           stripe_payment_id: string;
           created_at?: string;
+          status?: string;
+          token_id: string;
         };
         Update: {
           id?: string;
@@ -53,7 +61,10 @@ export type Database = {
           amount?: number;
           stripe_payment_id?: string;
           created_at?: string;
+          status?: string;
+          token_id?: string;
         };
+        Relationships: [];
       };
     };
     Views: {};

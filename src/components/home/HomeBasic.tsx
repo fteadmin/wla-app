@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import Link from "next/link";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Trophy, CheckCircle, Clock, ChevronRight,
@@ -186,12 +186,6 @@ export default function HomeBasic() {
 
   useEffect(() => { if (member) setTokens(member.tokens); }, [member]);
 
-  // Simulate live token updates
-  useEffect(() => {
-    const t = setInterval(() => setTokens(v => v + Math.floor(Math.random() * 3)), 4500);
-    return () => clearInterval(t);
-  }, []);
-
   const markRead = (id: number) =>
     setNotifs(ns => ns.map(n => n.id === id ? { ...n, unread: false } : n));
 
@@ -213,28 +207,18 @@ export default function HomeBasic() {
   }
 
   return (
-    <div className="min-h-full bg-black text-white font-sora" style={{
-      background: "radial-gradient(ellipse 60% 35% at 5% 0%, rgba(217,186,132,0.06) 0%, transparent 55%), radial-gradient(ellipse 50% 30% at 95% 100%, rgba(200,180,80,0.04) 0%, transparent 50%), #000",
-    }}>
-      <style>{animations}</style>
-      <div className="max-w-[1100px] px-4 sm:px-6 lg:px-7 py-6 pb-16">
-
-        {/* ── Welcome ── */}
-        <div className="fu1 flex items-end justify-between flex-wrap gap-3 mb-6">
-          <div>
-            <div className="flex items-center gap-2 text-[10px] font-bold tracking-[0.12em] uppercase text-[#D9BA84] mb-1.5">
-              <span className="w-4 h-px bg-[#D9BA84]" />
-              Member Dashboard
-            </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white leading-tight">
-              Hey, {member.name?.split(" ")[0]} 👋
-            </h1>
-            <p className="text-[13px] text-[#a0a0b4] mt-1">Here's what's happening in your club today.</p>
+    <div className="min-h-screen bg-[#000000] text-white font-sans">
+      <div className="max-w-5xl mx-auto px-4 py-8">
+        <div className="mb-8">
+          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-[#D9BA84] mb-2">
+            <span className="block w-5 h-0.5 bg-[#D9BA84]" />BLVD Token System
           </div>
-          <div className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#D9BA84]/8 border border-[#D9BA84]/20 text-[12px] font-semibold text-[#D9BA84]">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#D9BA84] shadow-[0_0_6px_rgba(217,186,132,0.6)] animate-dot-pulse" />
-            Membership Active
-          </div>
+          <h1 className="text-3xl sm:text-4xl font-extrabold leading-tight mb-2">
+            Hey, {member.name?.split(" ")[0]} 👋
+          </h1>
+          <p className="text-sm text-[#a0a0b4]">
+            Here's what's happening in your club today.
+          </p>
         </div>
 
         {/* ── Membership + Token grid ── */}
@@ -303,7 +287,7 @@ export default function HomeBasic() {
                 Redeem
               </button>
             </div>
-          </Card>
+          </Card>          
         </div>
 
         {/* ── Stats ── */}
@@ -331,7 +315,7 @@ export default function HomeBasic() {
               return (
                 <Link
                   key={i}
-                  to={qa.to}
+                  href={qa.to}
                   className="flex flex-col items-center justify-center gap-2.5 py-5 px-3 bg-[#0d0d0d] border border-[#D9BA84]/13 rounded-2xl no-underline group transition-all duration-250 hover:border-[#D9BA84]/35 hover:-translate-y-[3px] hover:shadow-[0_12px_30px_rgba(0,0,0,0.55)] hover:bg-[#D9BA84]/4"
                 >
                   <div className="w-10 h-10 rounded-[12px] bg-[#D9BA84]/10 border border-[#D9BA84]/18 flex items-center justify-center text-[#D9BA84] group-hover:shadow-[0_0_18px_rgba(217,186,132,0.2)] transition-shadow">

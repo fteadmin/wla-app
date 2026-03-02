@@ -1,17 +1,19 @@
+"use client";
+
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useNavigate } from "react-router-dom";
+import { useRouter } from "next/navigation";
 
 export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
   const [role, setRole] = useState<string | null>(null);
-  const navigate = useNavigate();
+  const router = useRouter();
 
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data }) => {
       if (!data.user) {
-        navigate("/login");
+        router.push("/login");
         return;
       }
       setUser(data.user);
@@ -37,13 +39,13 @@ export default function AdminDashboard() {
         }
       }
       if (!profile || profile.role !== "admin") {
-        navigate("/dashboard");
+        router.push("/dashboard");
         return;
       }
       setRole(profile.role);
       setLoading(false);
     });
-  }, [navigate]);
+  }, [router]);
 
   if (loading) return <div className="p-10 text-center">Loading...</div>;
   if (!user) return null;

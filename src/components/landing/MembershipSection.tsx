@@ -1,7 +1,9 @@
+"use client";
+
 import { motion } from "framer-motion";
 import { Check, Crown, Star, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
+import { useRouter } from "next/navigation";
 
 const tiers = [
   {
@@ -61,7 +63,7 @@ const tiers = [
 ];
 
 const MembershipSection = () => {
-  const navigate = useNavigate();
+  const router = useRouter();
 
   return (
     <section className="py-24 relative">
@@ -116,7 +118,7 @@ const MembershipSection = () => {
               {tier.purchasable ? (
                 <Button
                   className="w-full bg-primary text-primary-foreground hover:bg-primary/90 shadow-[0_0_20px_hsl(38_46%_68%_/_0.2)]"
-                  onClick={() => navigate("/auth")}
+                  onClick={() => router.push("/auth")}
                 >
                   {tier.cta}
                 </Button>

@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import Link from "next/link";
 import { ShoppingBag, ArrowLeft, Clock } from "lucide-react";
 
 export default function MarketplaceBasic() {
@@ -38,7 +38,7 @@ export default function MarketplaceBasic() {
 
         {/* CTA */}
         <Link
-          to="/dashboard"
+          href="/dashboard"
           className="relative z-10 inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-br from-[#D9BA84] to-[#c8b450] text-black text-[13px] font-bold no-underline hover:opacity-88 hover:scale-[1.02] transition-all font-sora"
         >
           <ArrowLeft size={14} /> Back to Dashboard

@@ -42,11 +42,14 @@ export default function Dashboard() {
         const { data: profileData, error } = await supabase
           .from("user_profiles")
           .select("role, tokens")
-          .or(`user_id.eq.${data.user.id},id.eq.${data.user.id}`)
-          .single();
+          .eq("user_id", String(data.user.id))
+          .maybeSingle();
 
-        if (error || !profileData) {
-          console.error("Profile fetch failed. user_id:", data.user.id, error);
+        if (error) {
+          console.error("Profile fetch error:", error);
+        }
+
+        if (!profileData) {
           setRole("basic");
           setMemberName(data.user.email || "");
           setMemberInitials((data.user.email || "").slice(0, 2).toUpperCase());
