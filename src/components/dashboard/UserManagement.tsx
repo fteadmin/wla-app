@@ -91,28 +91,27 @@ export default function UserManagement() {
   }
 
   return (
-    <div className="bg-[#0d0d0d] border border-[#D9BA84]/13 rounded-2xl p-6">
-      <div className="flex items-center justify-between mb-6">
+    <div className="bg-[#0d0d0d] border border-[#D9BA84]/13 rounded-2xl p-4 md:p-6">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4 md:mb-6">
         <div className="flex items-center gap-2">
-          <Users size={20} className="text-[#D9BA84]" />
-          <h2 className="text-xl font-bold">User Management</h2>
+          <Users size={18} className="md:w-5 md:h-5 text-[#D9BA84]" />
+          <h2 className="text-lg md:text-xl font-bold">User Management</h2>
         </div>
         <button
           onClick={fetchUsers}
-          className="flex items-center gap-2 px-4 py-2 bg-[#D9BA84]/10 border border-[#D9BA84]/20 rounded-lg text-sm hover:bg-[#D9BA84]/20 transition"
-        >
+          className="flex items-center gap-2 px-3 md:px-4 py-2 bg-[#D9BA84]/10 border border-[#D9BA84]/20 rounded-lg text-xs md:text-sm hover:bg-[#D9BA84]/20 transition">
           <RefreshCw size={14} />
-          Refresh
+          <span className="hidden sm:inline">Refresh</span>
         </button>
       </div>
 
       {/* Search and Filter */}
-      <div className="flex gap-3 mb-4">
+      <div className="flex flex-col sm:flex-row gap-3 mb-4">
         <div className="flex-1 relative">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#a0a0b4]" />
           <input
             type="text"
-            placeholder="Search by name, email, or membership ID..."
+            placeholder="Search users..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-10 pr-4 py-2 bg-[#000000] border border-[#D9BA84]/20 rounded-lg text-sm focus:outline-none focus:border-[#D9BA84]/40"
@@ -124,7 +123,7 @@ export default function UserManagement() {
             setFilterRole(e.target.value as "all" | "admin" | "basic");
             fetchUsers();
           }}
-          className="px-4 py-2 bg-[#000000] border border-[#D9BA84]/20 rounded-lg text-sm focus:outline-none focus:border-[#D9BA84]/40"
+          className="px-4 py-2 bg-[#000000] border border-[#D9BA84]/20 rounded-lg text-sm focus:outline-none focus:border-[#D9BA84]/40 w-full sm:w-auto"
         >
           <option value="all">All Roles</option>
           <option value="admin">Admin Only</option>
@@ -133,26 +132,28 @@ export default function UserManagement() {
       </div>
 
       {/* Users Table */}
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-[#D9BA84]/10">
-              <th className="text-left py-3 px-2 text-[#a0a0b4] font-semibold">User</th>
-              <th className="text-left py-3 px-2 text-[#a0a0b4] font-semibold">Email</th>
-              <th className="text-left py-3 px-2 text-[#a0a0b4] font-semibold">Role</th>
-              <th className="text-left py-3 px-2 text-[#a0a0b4] font-semibold">Membership</th>
-              <th className="text-left py-3 px-2 text-[#a0a0b4] font-semibold">Tokens</th>
-              <th className="text-left py-3 px-2 text-[#a0a0b4] font-semibold">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredUsers.map((user) => (
-              <tr key={user.id} className="border-b border-[#D9BA84]/5 hover:bg-[#D9BA84]/5">
-                <td className="py-3 px-2">
-                  <div className="font-medium">{user.first_name} {user.last_name}</div>
-                  <div className="text-xs text-[#a0a0b4]">{user.membership_id || "No ID"}</div>
-                </td>
-                <td className="py-3 px-2 text-[#a0a0b4]">{user.email}</td>
+      <div className="overflow-x-auto -mx-4 md:mx-0">
+        <div className="inline-block min-w-full align-middle">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-[#D9BA84]/10">
+                <th className="text-left py-3 px-2 text-[#a0a0b4] font-semibold whitespace-nowrap">User</th>
+                <th className="text-left py-3 px-2 text-[#a0a0b4] font-semibold hidden md:table-cell">Email</th>
+                <th className="text-left py-3 px-2 text-[#a0a0b4] font-semibold">Role</th>
+                <th className="text-left py-3 px-2 text-[#a0a0b4] font-semibold hidden lg:table-cell">Membership</th>
+                <th className="text-left py-3 px-2 text-[#a0a0b4] font-semibold">Tokens</th>
+                <th className="text-left py-3 px-2 text-[#a0a0b4] font-semibold">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredUsers.map((user) => (
+                <tr key={user.id} className="border-b border-[#D9BA84]/5 hover:bg-[#D9BA84]/5">
+                  <td className="py-3 px-2">
+                    <div className="font-medium text-sm">{user.first_name} {user.last_name}</div>
+                    <div className="text-xs text-[#a0a0b4]">{user.membership_id || "No ID"}</div>
+                    <div className="text-xs text-[#a0a0b4] md:hidden mt-1">{user.email}</div>
+                  </td>
+                  <td className="py-3 px-2 text-[#a0a0b4] hidden md:table-cell">{user.email}</td>
                 <td className="py-3 px-2">
                   <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
                     user.role === "admin" 
@@ -162,7 +163,7 @@ export default function UserManagement() {
                     {user.role}
                   </span>
                 </td>
-                <td className="py-3 px-2">
+                <td className="py-3 px-2 hidden lg:table-cell">
                   <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
                     user.membership_status === "active"
                       ? "bg-green-500/20 text-green-400"
@@ -203,18 +204,18 @@ export default function UserManagement() {
                   )}
                 </td>
                 <td className="py-3 px-2">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     {editingTokens?.userId !== user.id && (
                       <>
                         <button
                           onClick={() => setEditingTokens({ userId: user.id, amount: user.tokens || 0 })}
-                          className="text-xs px-2 py-1 bg-[#D9BA84]/10 border border-[#D9BA84]/20 rounded hover:bg-[#D9BA84]/20"
+                          className="text-xs px-2 py-1 bg-[#D9BA84]/10 border border-[#D9BA84]/20 rounded hover:bg-[#D9BA84]/20 whitespace-nowrap"
                         >
                           Edit
                         </button>
                         <button
                           onClick={() => resetTokens(user.id)}
-                          className="text-xs px-2 py-1 bg-red-500/10 border border-red-500/20 rounded hover:bg-red-500/20 text-red-400"
+                          className="text-xs px-2 py-1 bg-red-500/10 border border-red-500/20 rounded hover:bg-red-500/20 text-red-400 whitespace-nowrap"
                         >
                           Reset
                         </button>
@@ -223,9 +224,10 @@ export default function UserManagement() {
                   </div>
                 </td>
               </tr>
-            ))}
-          </tbody>
-        </table>
+              ))}
+            </tbody>
+          </table>
+        </div>
 
         {filteredUsers.length === 0 && (
           <div className="text-center py-8 text-[#a0a0b4]">

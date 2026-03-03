@@ -296,63 +296,63 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#000000] text-white p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
+    <div className="min-h-screen bg-[#000000] text-white p-3 sm:p-4 md:p-6">
+      <div className="max-w-7xl mx-auto space-y-4 md:space-y-6">
         {/* Header */}
-        <div className="mb-8">
+        <div className="mb-4 md:mb-8">
           <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-[#D9BA84] mb-2">
-            <Shield size={20} />
+            <Shield size={18} className="md:w-5 md:h-5" />
             <span>Admin Command Center</span>
           </div>
-          <h1 className="text-4xl font-bold mb-2">WLA Dashboard</h1>
-          <p className="text-[#a0a0b4]">Complete administrative control and management</p>
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-2">WLA Dashboard</h1>
+          <p className="text-sm md:text-base text-[#a0a0b4]">Complete administrative control and management</p>
         </div>
 
         {/* Stats Dashboard - 4 Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-[#0d0d0d] border border-[#D9BA84]/13 rounded-2xl p-6 hover:border-[#D9BA84]/25 transition">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-12 h-12 rounded-xl bg-[#D9BA84]/10 border border-[#D9BA84]/20 flex items-center justify-center">
-                <Users size={24} className="text-[#D9BA84]" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+          <div className="bg-[#0d0d0d] border border-[#D9BA84]/13 rounded-2xl p-4 md:p-6 hover:border-[#D9BA84]/25 transition">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-[#D9BA84]/10 border border-[#D9BA84]/20 flex items-center justify-center flex-shrink-0">
+                <Users size={20} className="md:w-6 md:h-6 text-[#D9BA84]" />
               </div>
               <div>
-                <div className="text-3xl font-bold">{stats.totalMembers}</div>
+                <div className="text-2xl md:text-3xl font-bold">{stats.totalMembers}</div>
                 <div className="text-xs text-[#a0a0b4]">Total Members</div>
               </div>
             </div>
           </div>
 
-          <div className="bg-[#0d0d0d] border border-green-500/13 rounded-2xl p-6 hover:border-green-500/25 transition">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-12 h-12 rounded-xl bg-green-500/10 border border-green-500/20 flex items-center justify-center">
-                <Activity size={24} className="text-green-400" />
+          <div className="bg-[#0d0d0d] border border-green-500/13 rounded-2xl p-4 md:p-6 hover:border-green-500/25 transition">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-green-500/10 border border-green-500/20 flex items-center justify-center flex-shrink-0">
+                <Activity size={20} className="md:w-6 md:h-6 text-green-400" />
               </div>
               <div>
-                <div className="text-3xl font-bold">{stats.activeMembers}</div>
+                <div className="text-2xl md:text-3xl font-bold">{stats.activeMembers}</div>
                 <div className="text-xs text-[#a0a0b4]">Active Members</div>
               </div>
             </div>
           </div>
 
-          <div className="bg-[#0d0d0d] border border-blue-500/13 rounded-2xl p-6 hover:border-blue-500/25 transition">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-12 h-12 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
-                <Coins size={24} className="text-blue-400" />
+          <div className="bg-[#0d0d0d] border border-blue-500/13 rounded-2xl p-4 md:p-6 hover:border-blue-500/25 transition">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center flex-shrink-0">
+                <Coins size={20} className="md:w-6 md:h-6 text-blue-400" />
               </div>
               <div>
-                <div className="text-3xl font-bold">{stats.totalTokens}</div>
+                <div className="text-2xl md:text-3xl font-bold">{stats.totalTokens}</div>
                 <div className="text-xs text-[#a0a0b4]">BLVD Tokens</div>
               </div>
             </div>
           </div>
 
-          <div className="bg-[#0d0d0d] border border-purple-500/13 rounded-2xl p-6 hover:border-purple-500/25 transition">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-12 h-12 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center">
-                <DollarSign size={24} className="text-purple-400" />
+          <div className="bg-[#0d0d0d] border border-purple-500/13 rounded-2xl p-4 md:p-6 hover:border-purple-500/25 transition">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center flex-shrink-0">
+                <DollarSign size={20} className="md:w-6 md:h-6 text-purple-400" />
               </div>
               <div>
-                <div className="text-3xl font-bold">${(stats.totalRevenue / 100).toFixed(2)}</div>
+                <div className="text-2xl md:text-3xl font-bold">${(stats.totalRevenue / 100).toFixed(2)}</div>
                 <div className="text-xs text-[#a0a0b4]">Total Revenue</div>
               </div>
             </div>
@@ -360,7 +360,7 @@ export default function AdminPage() {
         </div>
 
         {/* Member Validator */}
-        <div className="bg-[#0d0d0d] border border-[#D9BA84]/13 rounded-2xl p-6">
+        <div className="bg-[#0d0d0d] border border-[#D9BA84]/13 rounded-2xl p-4 md:p-6">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-2">
               <Camera size={20} className="text-[#D9BA84]" />
@@ -483,10 +483,10 @@ export default function AdminPage() {
                     </span>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <div className="text-xs text-[#a0a0b4] mb-1">Email</div>
-                      <div className="text-sm font-medium">{memberData.email}</div>
+                      <div className="text-sm font-medium break-all">{memberData.email}</div>
                     </div>
                     <div>
                       <div className="text-xs text-[#a0a0b4] mb-1">Tier</div>
@@ -520,7 +520,7 @@ export default function AdminPage() {
                   <div className="grid grid-cols-3 gap-2">
                     <button
                       onClick={() => setTokenAction("add")}
-                      className={`px-4 py-2 rounded-lg font-semibold transition ${
+                      className={`px-2 md:px-4 py-2 rounded-lg text-sm font-semibold transition ${
                         tokenAction === "add"
                           ? "bg-green-500/20 border border-green-500/40 text-green-400"
                           : "bg-[#D9BA84]/10 border border-[#D9BA84]/20 hover:bg-[#D9BA84]/20"
@@ -531,7 +531,7 @@ export default function AdminPage() {
                     </button>
                     <button
                       onClick={() => setTokenAction("subtract")}
-                      className={`px-4 py-2 rounded-lg font-semibold transition ${
+                      className={`px-2 md:px-4 py-2 rounded-lg text-sm font-semibold transition ${
                         tokenAction === "subtract"
                           ? "bg-orange-500/20 border border-orange-500/40 text-orange-400"
                           : "bg-[#D9BA84]/10 border border-[#D9BA84]/20 hover:bg-[#D9BA84]/20"
@@ -542,7 +542,7 @@ export default function AdminPage() {
                     </button>
                     <button
                       onClick={() => setTokenAction("reset")}
-                      className={`px-4 py-2 rounded-lg font-semibold transition ${
+                      className={`px-2 md:px-4 py-2 rounded-lg text-sm font-semibold transition ${
                         tokenAction === "reset"
                           ? "bg-red-500/20 border border-red-500/40 text-red-400"
                           : "bg-[#D9BA84]/10 border border-[#D9BA84]/20 hover:bg-[#D9BA84]/20"
@@ -584,9 +584,9 @@ export default function AdminPage() {
         </div>
 
         {/* Content Control */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {/* Contest Creator */}
-          <div className="bg-[#0d0d0d] border border-[#D9BA84]/13 rounded-2xl p-6">
+          <div className="bg-[#0d0d0d] border border-[#D9BA84]/13 rounded-2xl p-4 md:p-6">
             <div className="flex items-center gap-2 mb-4">
               <Trophy size={20} className="text-[#D9BA84]" />
               <h2 className="text-xl font-bold">Contest Creator</h2>
@@ -653,7 +653,7 @@ export default function AdminPage() {
           </div>
 
           {/* Marketplace Item Poster */}
-          <div className="bg-[#0d0d0d] border border-[#D9BA84]/13 rounded-2xl p-6">
+          <div className="bg-[#0d0d0d] border border-[#D9BA84]/13 rounded-2xl p-4 md:p-6">
             <div className="flex items-center gap-2 mb-4">
               <ShoppingBag size={20} className="text-[#D9BA84]" />
               <h2 className="text-xl font-bold">Marketplace Poster</h2>
