@@ -1,60 +1,163 @@
-import Link from "next/link";
-import { Trophy, ArrowLeft, Clock } from "lucide-react";
+"use client";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { Trophy, Calendar, Users, CheckCircle } from "lucide-react";
+
+interface Contest {
+  id: string;
+  title: string;
+  description: string;
+  prize: string;
+  end_date: string;
+  created_by: string;
+  created_at: string;
+  participants?: number;
+}
 
 export default function ContestsBasic() {
+  const [contests, setContests] = useState<Contest[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [joinedContests, setJoinedContests] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    fetchContests();
+    fetchJoinedContests();
+  }, []);
+
+  async function fetchContests() {
+    try {
+      const { data, error } = await supabase
+        .from("contests")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      setContests(data || []);
+    } catch (error) {
+      console.error("Error fetching contests:", error);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function fetchJoinedContests() {
+    try {
+      const { data: auth } = await supabase.auth.getUser();
+      if (!auth.user) return;
+
+      const { data, error } = await supabase
+        .from("contest_participants")
+        .select("contest_id")
+        .eq("user_id", auth.user.id);
+
+      if (error) throw error;
+      
+      const joined = new Set(data?.map(p => p.contest_id) || []);
+      setJoinedContests(joined);
+    } catch (error) {
+      console.error("Error fetching joined contests:", error);
+    }
+  }
+
+  async function joinContest(contestId: string) {
+    try {
+      const { data: auth } = await supabase.auth.getUser();
+      if (!auth.user) throw new Error("Not authenticated");
+
+      const { error } = await supabase.from("contest_participants").insert({
+        contest_id: contestId,
+        user_id: auth.user.id,
+      });
+
+      if (error) throw error;
+
+      setJoinedContests(prev => new Set([...prev, contestId]));
+      await fetchContests();
+    } catch (error) {
+      console.error("Error joining contest:", error);
+      alert("Failed to join contest");
+    }
+  }
+
   return (
-    <div className="min-h-full bg-black flex items-center justify-center p-6 font-sora">
-      <div className="relative overflow-hidden bg-[#0d0d0d] border border-[#D9BA84]/18 rounded-3xl p-10 sm:p-14 max-w-[480px] w-full text-center">
-
-        {/* Glow */}
-        <div className="absolute -top-20 left-1/2 -translate-x-1/2 w-80 h-52 rounded-full pointer-events-none"
-          style={{ background: "radial-gradient(circle, rgba(217,186,132,0.08) 0%, transparent 70%)" }} />
-        {/* Pattern */}
-        <div className="absolute inset-0 pointer-events-none opacity-[0.025]"
-          style={{ backgroundImage: "repeating-linear-gradient(45deg, #D9BA84 0px, #D9BA84 1px, transparent 1px, transparent 14px)" }} />
-
-        {/* Icon */}
-        <div className="relative z-10 w-20 h-20 rounded-[22px] bg-[#D9BA84]/10 border border-[#D9BA84]/22 flex items-center justify-center mx-auto mb-7 text-[#D9BA84] animate-icon-float shadow-[0_0_0_0_rgba(217,186,132,0.12)]">
-          <Trophy size={38} />
-        </div>
-
-        {/* Eyebrow */}
-        <div className="relative z-10 flex items-center justify-center gap-2.5 text-[10px] font-bold tracking-[0.18em] uppercase text-[#D9BA84] mb-3.5">
-          <span className="w-6 h-px bg-[#D9BA84]/35" />
-          Coming Soon
-          <span className="w-6 h-px bg-[#D9BA84]/35" />
-        </div>
-
-        {/* Title */}
-        <h1 className="relative z-10 text-[32px] sm:text-[36px] font-extrabold tracking-tight text-white mb-3 leading-tight">
-          Contests
-        </h1>
-
-        {/* Description */}
-        <p className="relative z-10 text-[14px] text-[#a0a0b4] leading-relaxed mb-8">
-          Our contest arena is being built. Soon you'll be able to enter photo contests,
-          compete for prizes, and climb the leaderboard with fellow WLA Cruiser members.
-        </p>
-
-        {/* CTA */}
-        <Link
-          href="/dashboard"
-          className="relative z-10 inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-br from-[#D9BA84] to-[#c8b450] text-black text-[13px] font-bold no-underline hover:opacity-88 hover:scale-[1.02] transition-all font-sora"
-        >
-          <ArrowLeft size={14} /> Back to Dashboard
-        </Link>
-
-        {/* Status tags */}
-        <div className="relative z-10 flex items-center justify-center gap-2.5 mt-6 flex-wrap">
-          <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#D9BA84]/7 border border-[#D9BA84]/15 text-[11px] font-semibold text-[#D9BA84]">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#D9BA84] shadow-[0_0_6px_rgba(217,186,132,0.7)] animate-dot-pulse" />
-            In Development
-          </div>
-          <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#D9BA84]/7 border border-[#D9BA84]/15 text-[11px] font-semibold text-[#D9BA84]">
-            <Clock size={11} /> Available Soon
-          </div>
-        </div>
+    <div className="space-y-6">
+      {/* Header */}
+      <div>
+        <h2 className="text-2xl font-bold mb-1">Community Contests</h2>
+        <p className="text-sm text-[#a0a0b4]">Join contests and compete for amazing prizes!</p>
       </div>
+
+      {/* Contests Grid */}
+      {loading ? (
+        <div className="text-center py-12 text-[#a0a0b4]">Loading contests...</div>
+      ) : contests.length === 0 ? (
+        <div className="bg-[#0d0d0d] border border-[#D9BA84]/13 rounded-2xl p-12 text-center">
+          <Trophy size={48} className="mx-auto mb-4 text-[#a0a0b4]" />
+          <h3 className="text-xl font-bold mb-2">No Active Contests</h3>
+          <p className="text-[#a0a0b4]">Check back soon for new exciting contests!</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {contests.map((contest) => {
+            const isJoined = joinedContests.has(contest.id);
+            const hasEnded = new Date(contest.end_date) < new Date();
+
+            return (
+              <div
+                key={contest.id}
+                className="bg-[#0d0d0d] border border-[#D9BA84]/13 rounded-2xl p-6 hover:border-[#D9BA84]/25 transition"
+              >
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-[#D9BA84]/10 border border-[#D9BA84]/20 flex items-center justify-center">
+                      <Trophy size={20} className="text-[#D9BA84]" />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-lg">{contest.title}</h3>
+                      <div className="text-xs text-[#D9BA84]">
+                        Prize: {contest.prize}
+                      </div>
+                    </div>
+                  </div>
+                  {isJoined && (
+                    <span className="px-2 py-1 bg-green-500/20 border border-green-500/30 rounded-full text-xs font-semibold text-green-400 flex items-center gap-1">
+                      <CheckCircle size={12} />
+                      Joined
+                    </span>
+                  )}
+                </div>
+
+                <p className="text-sm text-[#a0a0b4] mb-4">{contest.description}</p>
+
+                <div className="flex items-center gap-4 text-xs text-[#a0a0b4] pb-4 border-b border-[#D9BA84]/10">
+                  <div className="flex items-center gap-1">
+                    <Calendar size={14} />
+                    {hasEnded ? "Ended" : "Ends"}: {new Date(contest.end_date).toLocaleDateString()}
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Users size={14} />
+                    {contest.participants || 0} participants
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => joinContest(contest.id)}
+                  disabled={isJoined || hasEnded}
+                  className={`w-full mt-4 px-4 py-3 rounded-lg font-semibold transition ${
+                    isJoined
+                      ? "bg-green-500/10 border border-green-500/20 text-green-400 cursor-not-allowed"
+                      : hasEnded
+                      ? "bg-[#a0a0b4]/10 border border-[#a0a0b4]/20 text-[#a0a0b4] cursor-not-allowed"
+                      : "bg-gradient-to-br from-[#D9BA84] to-[#c8b450] text-black hover:opacity-90"
+                  }`}
+                >
+                  {isJoined ? "Already Joined" : hasEnded ? "Contest Ended" : "Join Contest"}
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

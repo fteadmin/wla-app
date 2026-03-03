@@ -43,31 +43,47 @@ export default function Signup() {
 
 		setLoading(true);
 		try {
+			// Sign up the user (trigger will auto-create basic profile)
 			const { data, error: signUpError } = await supabase.auth.signUp({
 				email,
 				password,
-				options: { data: { first_name: firstName, last_name: lastName } }
+				options: { 
+					data: { first_name: firstName, last_name: lastName },
+					emailRedirectTo: `${window.location.origin}/dashboard`
+				}
 			});
 
-			if (signUpError || !data?.user) throw new Error(signUpError?.message || "Sign up failed.");
-
-			// Insert user profile
-			const { error: profileError } = await supabase.from("user_profiles").insert([
-				{
-					id: data.user.id,
-					role: tier,
-					first_name: firstName,
-					last_name: lastName,
-					email: email,
-				}
-			]);
-
-			if (profileError) {
-				console.error("Failed to save user profile:", profileError);
-				throw new Error("Failed to save user profile: " + profileError.message);
+			if (signUpError || !data?.user) {
+				throw new Error(signUpError?.message || "Sign up failed.");
 			}
 
-			router.push(tier === "admin" ? "/admin-dashboard" : "/dashboard");
+			// Check if session exists (no email confirmation required)
+			if (data.session) {
+				// Wait a moment for the trigger to create the profile
+				await new Promise(resolve => setTimeout(resolve, 500));
+
+				// If admin signup, update the role
+				if (tier === "admin") {
+					const { error: updateError } = await supabase
+						.from("user_profiles")
+						.update({ role: "admin" })
+						.eq("id", data.user.id);
+
+					if (updateError) {
+						console.error("Failed to update admin role:", updateError);
+						// Don't throw error, user can still login as basic user
+					}
+				}
+
+				// Redirect to dashboard
+				router.push("/dashboard");
+			} else {
+				// Email confirmation required
+				setError("Account created! Please check your email to confirm your account before logging in.");
+				setTimeout(() => {
+					router.push("/login");
+				}, 3000);
+			}
 		} catch (err: any) {
 			console.error("Signup error:", err);
 			setError(err.message);
@@ -166,11 +182,16 @@ export default function Signup() {
 						</div>
 
 						{tier === "admin" && (
+						<div className="space-y-2">
 							<div className="space-y-1.5">
 								<label className="text-[12px] font-bold text-[#D9BA84]">Admin Access Code</label>
 								<input className="w-full bg-[#D9BA84]/5 border border-[#D9BA84]/30 rounded-xl py-2.5 px-4 text-sm text-[#D9BA84] outline-none" placeholder="Enter code" value={adminCode} onChange={e => setAdminCode(e.target.value)} />
 							</div>
-						)}
+							<div className="text-xs text-[#a0a0b4] bg-[#D9BA84]/5 border border-[#D9BA84]/10 rounded-lg p-2">
+								<span className="font-semibold text-[#D9BA84]">Note:</span> Users with <code className="text-[#D9BA84]">@futuretrendsent.info</code> email addresses automatically receive admin access.
+							</div>
+						</div>
+					)}
 
 						<div className="flex items-start gap-2 pt-2">
 							<input type="checkbox" id="terms" className="mt-1 accent-[#D9BA84]" checked={terms} onChange={e => setTerms(e.target.checked)} />

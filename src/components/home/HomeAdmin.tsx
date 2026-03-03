@@ -1,6 +1,9 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Shield, QrCode, Hash, CheckCircle, Users, Calendar, TrendingUp, Settings } from "lucide-react";
+import { Shield, Hash, CheckCircle, Settings } from "lucide-react";
+import StatsOverview from "../dashboard/StatsOverview";
+import QRScanner from "../dashboard/QRScanner";
+import UserManagement from "../dashboard/UserManagement";
 
 export default function HomeAdmin() {
   const [membershipData, setMembershipData] = useState<{
@@ -43,7 +46,7 @@ export default function HomeAdmin() {
 
   return (
     <div className="min-h-screen bg-[#000000] text-white p-6">
-      <div className="max-w-6xl mx-auto">
+      <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-[#D9BA84] mb-2">
@@ -54,44 +57,8 @@ export default function HomeAdmin() {
           <p className="text-[#a0a0b4]">Manage members, events, and content for the community.</p>
         </div>
 
-        {/* Admin Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <div className="bg-[#0d0d0d] border border-[#D9BA84]/13 rounded-2xl p-6">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 rounded-xl bg-[#D9BA84]/10 border border-[#D9BA84]/20 flex items-center justify-center">
-                <Users size={20} className="text-[#D9BA84]" />
-              </div>
-              <div>
-                <div className="text-2xl font-bold">247</div>
-                <div className="text-xs text-[#a0a0b4]">Total Members</div>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-[#0d0d0d] border border-[#D9BA84]/13 rounded-2xl p-6">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 rounded-xl bg-[#D9BA84]/10 border border-[#D9BA84]/20 flex items-center justify-center">
-                <Calendar size={20} className="text-[#D9BA84]" />
-              </div>
-              <div>
-                <div className="text-2xl font-bold">12</div>
-                <div className="text-xs text-[#a0a0b4]">Upcoming Events</div>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-[#0d0d0d] border border-[#D9BA84]/13 rounded-2xl p-6">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 rounded-xl bg-[#D9BA84]/10 border border-[#D9BA84]/20 flex items-center justify-center">
-                <TrendingUp size={20} className="text-[#D9BA84]" />
-              </div>
-              <div>
-                <div className="text-2xl font-bold">89%</div>
-                <div className="text-xs text-[#a0a0b4]">Engagement Rate</div>
-              </div>
-            </div>
-          </div>
-        </div>
+        {/* Stats Overview */}
+        <StatsOverview />
 
         {/* Admin Membership Card */}
         {membershipData?.membershipStatus === "active" && membershipData.qrCode && (
@@ -151,28 +118,11 @@ export default function HomeAdmin() {
           </div>
         )}
 
-        {/* Admin Tools */}
-        <div className="bg-[#0d0d0d] border border-[#D9BA84]/13 rounded-2xl p-6">
-          <h2 className="text-xl font-bold mb-4">Admin Tools</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <button className="bg-[#D9BA84]/5 border border-[#D9BA84]/15 rounded-xl p-4 text-left hover:bg-[#D9BA84]/10 hover:border-[#D9BA84]/30 transition-all">
-              <div className="font-semibold mb-1">Member Management</div>
-              <div className="text-xs text-[#a0a0b4]">View and manage all club members</div>
-            </button>
-            <button className="bg-[#D9BA84]/5 border border-[#D9BA84]/15 rounded-xl p-4 text-left hover:bg-[#D9BA84]/10 hover:border-[#D9BA84]/30 transition-all">
-              <div className="font-semibold mb-1">Event Management</div>
-              <div className="text-xs text-[#a0a0b4]">Create and manage club events</div>
-            </button>
-            <button className="bg-[#D9BA84]/5 border border-[#D9BA84]/15 rounded-xl p-4 text-left hover:bg-[#D9BA84]/10 hover:border-[#D9BA84]/30 transition-all">
-              <div className="font-semibold mb-1">Content Moderation</div>
-              <div className="text-xs text-[#a0a0b4]">Review and approve member content</div>
-            </button>
-            <button className="bg-[#D9BA84]/5 border border-[#D9BA84]/15 rounded-xl p-4 text-left hover:bg-[#D9BA84]/10 hover:border-[#D9BA84]/30 transition-all">
-              <div className="font-semibold mb-1">Analytics & Reports</div>
-              <div className="text-xs text-[#a0a0b4]">View detailed club statistics</div>
-            </button>
-          </div>
-        </div>
+        {/* QR Scanner for Member Check-In */}
+        <QRScanner />
+
+        {/* User Management */}
+        <UserManagement />
       </div>
     </div>
   );

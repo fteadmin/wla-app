@@ -1,59 +1,135 @@
-import Link from "next/link";
-import { ShoppingBag, ArrowLeft, Clock } from "lucide-react";
+"use client";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { ShoppingBag, DollarSign, Package, Filter } from "lucide-react";
+
+interface MarketplaceItem {
+  id: string;
+  title: string;
+  description: string;
+  price: number;
+  category: string;
+  image_url?: string;
+  created_by: string;
+  created_at: string;
+  status: string;
+}
 
 export default function MarketplaceBasic() {
+  const [items, setItems] = useState<MarketplaceItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [filterCategory, setFilterCategory] = useState<string>("all");
+
+  useEffect(() => {
+    fetchItems();
+  }, [filterCategory]);
+
+  async function fetchItems() {
+    try {
+      let query = supabase
+        .from("marketplace_items")
+        .select("*")
+        .eq("status", "active")
+        .order("created_at", { ascending: false });
+
+      if (filterCategory !== "all") {
+        query = query.eq("category", filterCategory);
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+      setItems(data || []);
+    } catch (error) {
+      console.error("Error fetching marketplace items:", error);
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
-    <div className="min-h-full bg-black flex items-center justify-center p-6 font-sora">
-      <div className="relative overflow-hidden bg-[#0d0d0d] border border-[#c8b450]/18 rounded-3xl p-10 sm:p-14 max-w-[480px] w-full text-center">
-
-        {/* Glow */}
-        <div className="absolute -top-20 left-1/2 -translate-x-1/2 w-80 h-52 rounded-full pointer-events-none"
-          style={{ background: "radial-gradient(circle, rgba(200,180,80,0.08) 0%, transparent 70%)" }} />
-        {/* Pattern */}
-        <div className="absolute inset-0 pointer-events-none opacity-[0.025]"
-          style={{ backgroundImage: "repeating-linear-gradient(45deg, #c8b450 0px, #c8b450 1px, transparent 1px, transparent 14px)" }} />
-
-        {/* Icon */}
-        <div className="relative z-10 w-20 h-20 rounded-[22px] bg-[#c8b450]/10 border border-[#c8b450]/22 flex items-center justify-center mx-auto mb-7 text-[#c8b450] animate-icon-float">
-          <ShoppingBag size={38} />
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between flex-wrap gap-4">
+        <div>
+          <h2 className="text-2xl font-bold mb-1">Marketplace</h2>
+          <p className="text-sm text-[#a0a0b4]">Browse parts, gear, and accessories</p>
         </div>
 
-        {/* Eyebrow */}
-        <div className="relative z-10 flex items-center justify-center gap-2.5 text-[10px] font-bold tracking-[0.18em] uppercase text-[#c8b450] mb-3.5">
-          <span className="w-6 h-px bg-[#c8b450]/35" />
-          Coming Soon
-          <span className="w-6 h-px bg-[#c8b450]/35" />
+        <div className="flex items-center gap-2">
+          <Filter size={16} className="text-[#a0a0b4]" />
+          <select
+            value={filterCategory}
+            onChange={(e) => setFilterCategory(e.target.value)}
+            className="px-4 py-2 bg-[#0d0d0d] border border-[#D9BA84]/20 rounded-lg text-sm focus:outline-none focus:border-[#D9BA84]/40"
+          >
+            <option value="all">All Categories</option>
+            <option value="parts">Parts</option>
+            <option value="accessories">Accessories</option>
+            <option value="gear">Gear</option>
+            <option value="bikes">Bikes</option>
+            <option value="other">Other</option>
+          </select>
         </div>
+      </div>
 
-        {/* Title */}
-        <h1 className="relative z-10 text-[32px] sm:text-[36px] font-extrabold tracking-tight text-white mb-3 leading-tight">
-          Marketplace
-        </h1>
-
-        {/* Description */}
-        <p className="relative z-10 text-[14px] text-[#a0a0b4] leading-relaxed mb-8">
-          The WLA Cruiser Marketplace is on its way. Browse parts, gear, and exclusive
-          member deals — all in one place, designed for our community.
-        </p>
-
-        {/* CTA */}
-        <Link
-          href="/dashboard"
-          className="relative z-10 inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-br from-[#D9BA84] to-[#c8b450] text-black text-[13px] font-bold no-underline hover:opacity-88 hover:scale-[1.02] transition-all font-sora"
-        >
-          <ArrowLeft size={14} /> Back to Dashboard
-        </Link>
-
-        {/* Status tags */}
-        <div className="relative z-10 flex items-center justify-center gap-2.5 mt-6 flex-wrap">
-          <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#c8b450]/7 border border-[#c8b450]/15 text-[11px] font-semibold text-[#c8b450]">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#c8b450] shadow-[0_0_6px_rgba(200,180,80,0.7)] animate-dot-pulse" />
-            In Development
-          </div>
-          <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#c8b450]/7 border border-[#c8b450]/15 text-[11px] font-semibold text-[#c8b450]">
-            <Clock size={11} /> Available Soon
-          </div>
+      {/* Items Grid */}
+      {loading ? (
+        <div className="text-center py-12 text-[#a0a0b4]">Loading items...</div>
+      ) : items.length === 0 ? (
+        <div className="bg-[#0d0d0d] border border-[#D9BA84]/13 rounded-2xl p-12 text-center">
+          <ShoppingBag size={48} className="mx-auto mb-4 text-[#a0a0b4]" />
+          <h3 className="text-xl font-bold mb-2">No Items Available</h3>
+          <p className="text-[#a0a0b4]">Check back soon for new items!</p>
         </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {items.map((item) => (
+            <div
+              key={item.id}
+              className="bg-[#0d0d0d] border border-[#D9BA84]/13 rounded-2xl overflow-hidden hover:border-[#D9BA84]/25 transition group cursor-pointer"
+            >
+              {item.image_url ? (
+                <div className="aspect-video bg-[#000000] border-b border-[#D9BA84]/10 overflow-hidden">
+                  <img
+                    src={item.image_url}
+                    alt={item.title}
+                    className="w-full h-full object-cover group-hover:scale-105 transition"
+                  />
+                </div>
+              ) : (
+                <div className="aspect-video bg-[#000000] border-b border-[#D9BA84]/10 flex items-center justify-center">
+                  <Package size={48} className="text-[#a0a0b4]" />
+                </div>
+              )}
+              
+              <div className="p-4">
+                <div className="flex items-start justify-between mb-2">
+                  <h3 className="font-bold text-lg line-clamp-1 flex-1">{item.title}</h3>
+                  <span className="px-2 py-1 bg-[#D9BA84]/10 border border-[#D9BA84]/20 rounded-full text-xs font-semibold text-[#D9BA84] capitalize ml-2">
+                    {item.category}
+                  </span>
+                </div>
+
+                <p className="text-sm text-[#a0a0b4] mb-3 line-clamp-2">{item.description}</p>
+
+                <div className="flex items-center justify-between pt-3 border-t border-[#D9BA84]/10">
+                  <div className="flex items-center gap-1 text-[#D9BA84]">
+                    <DollarSign size={20} />
+                    <span className="text-2xl font-bold">{item.price.toFixed(2)}</span>
+                  </div>
+                  <button className="px-4 py-2 bg-gradient-to-br from-[#D9BA84] to-[#c8b450] text-black text-sm font-semibold rounded-lg hover:opacity-90 transition">
+                    View Details
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="text-center text-xs text-[#a0a0b4]">
+        Showing {items.length} {filterCategory === "all" ? "items" : `${filterCategory} items`}
       </div>
     </div>
   );
