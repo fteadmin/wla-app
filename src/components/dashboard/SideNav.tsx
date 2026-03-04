@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   Home, ShoppingBag, Trophy, Upload, CreditCard, Coins,
-  ChevronRight, Car, LogOut, Settings, Menu, X, CalendarDays, MessageSquare
+  ChevronRight, Car, LogOut, Settings, Menu, X, CalendarDays
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,7 +14,6 @@ const NAV_ITEMS = [
   { key: "marketplace",     label: "Marketplace",     icon: ShoppingBag, to: "/dashboard/marketplace"     },
   { key: "contests",        label: "Contests",        icon: Trophy,       to: "/dashboard/contests"        },
   { key: "events",          label: "Events",          icon: CalendarDays, to: "/dashboard/events"          },
-  { key: "messages",        label: "Messages",        icon: MessageSquare, to: "/dashboard/messages"        },
   { key: "my-contents",     label: "My Contents",     icon: Upload,       to: "/dashboard/my-contents"     },
   { key: "membership",      label: "Membership",      icon: CreditCard,  to: "/dashboard/membership"      },
   { key: "token",           label: "Token",           icon: Coins,       to: "/dashboard/token"           },
