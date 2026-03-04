@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { LogIn, Shield, ArrowLeft, Sparkles } from "lucide-react";
 
 export default function Login() {
-  const [tier, setTier] = useState<"basic" | "admin" | null>(null);
+  const [tier, setTier] = useState<"community" | "admin" | null>(null);
   const [hovered, setHovered] = useState<string | null>(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -57,7 +57,7 @@ export default function Login() {
             first_name: firstName,
             last_name: lastName,
             email: userEmail,
-            role: "basic",
+            role: "community",
             tokens: 0
           })
           .select("role")
@@ -72,11 +72,7 @@ export default function Login() {
         profile = newProfile;
       }
 
-      if (profile.role === "admin") {
-        router.push("/admin");
-      } else {
-        router.push("/dashboard");
-      }
+      router.push("/dashboard");
     } catch (err: any) {
       console.error("Login error:", err);
       setError(err.message);
@@ -117,13 +113,13 @@ export default function Login() {
             <p className="text-[11px] font-bold uppercase tracking-widest text-gray-500 mb-3">Sign in as</p>
             <div className="grid grid-cols-2 gap-3 mb-5">
               <button
-                className={`flex flex-col gap-2 p-4 rounded-xl border-2 transition-all text-left ${hovered === "basic" ? "border-[#D9BA84] bg-[#D9BA84]/10" : "border-[#D9BA84]/15 bg-[#161616]"}`}
-                onClick={() => setTier("basic")}
-                onMouseEnter={() => setHovered("basic")}
+                className={`flex flex-col gap-2 p-4 rounded-xl border-2 transition-all text-left ${hovered === "community" ? "border-[#D9BA84] bg-[#D9BA84]/10" : "border-[#D9BA84]/15 bg-[#161616]"}`}
+                onClick={() => setTier("community")}
+                onMouseEnter={() => setHovered("community")}
                 onMouseLeave={() => setHovered(null)}
               >
                 <div className="w-8 h-8 bg-[#D9BA84]/15 text-[#D9BA84] rounded-lg flex items-center justify-center"><LogIn size={15} /></div>
-                <span className="text-[13px] font-bold">Basic User</span>
+                <span className="text-[13px] font-bold">Community Member</span>
                 <span className="text-[11px] text-gray-400">Member sign in</span>
               </button>
 

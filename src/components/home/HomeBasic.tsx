@@ -92,7 +92,7 @@ const STATS = [
 const QUICK_ACTIONS = [
   { label: "Join Contest",   icon: Trophy,      to: "/dashboard/contests"        },
   { label: "Marketplace",    icon: ShoppingBag, to: "/dashboard/marketplace"     },
-  { label: "Upload Content", icon: Upload,      to: "/dashboard/content-uploads" },
+  { label: "My Contents", icon: Upload,      to: "/dashboard/my-contents" },
   { label: "My Membership",  icon: Shield,      to: "/dashboard/membership"      },
 ];
 

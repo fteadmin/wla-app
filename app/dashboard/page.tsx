@@ -50,18 +50,18 @@ export default function Dashboard() {
 				}
 
 				if (!profileData) {
-					setRole("basic");
+					setRole("community");
 					setMemberName(data.user.email || "");
 					setMemberInitials((data.user.email || "").slice(0, 2).toUpperCase());
 				} else {
-					setRole(profileData.role || "basic");
+					setRole(profileData.role || "community");
 					const name = profileData.role === "admin" ? "Admin" : data.user.email;
 					setMemberName(name);
 					setMemberInitials(name.slice(0, 2).toUpperCase());
 				}
 			} catch (err) {
 				console.error("Error fetching profile:", err);
-				setRole("basic");
+				setRole("community");
 			} finally {
 				setLoading(false);
 			}
@@ -74,7 +74,8 @@ export default function Dashboard() {
 		if (pathname.endsWith("/dashboard")) setActive("dashboard");
 		else if (pathname.endsWith("/marketplace")) setActive("marketplace");
 		else if (pathname.endsWith("/contests")) setActive("contests");
-		else if (pathname.endsWith("/content-uploads")) setActive("content-uploads");
+		else if (pathname.endsWith("/events")) setActive("events");
+		else if (pathname.endsWith("/my-contents")) setActive("my-contents");
 	}, [pathname]);
 
 	if (loading) return <div className="p-10 text-center">Loading...</div>;

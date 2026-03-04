@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Trophy, Calendar, Users, X } from "lucide-react";
+import { Plus, Trophy, Calendar, Users, X, Eye, CheckCircle, XCircle, Award, Image as ImageIcon, Video as VideoIcon, Medal } from "lucide-react";
 
 interface Contest {
   id: string;
@@ -14,9 +14,30 @@ interface Contest {
   participants?: number;
 }
 
+interface Submission {
+  id: string;
+  title: string;
+  description: string;
+  media_url: string;
+  media_type: 'image' | 'video';
+  status: 'pending' | 'approved' | 'rejected';
+  winner: boolean;
+  placement: 1 | 2 | 3 | null;
+  created_at: string;
+  user_id: string;
+  user_profiles?: {
+    first_name: string;
+    last_name: string;
+    email: string;
+  };
+}
+
 export default function ContestsAdmin() {
   const [contests, setContests] = useState<Contest[]>([]);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showSubmissionsModal, setShowSubmissionsModal] = useState(false);
+  const [selectedContest, setSelectedContest] = useState<Contest | null>(null);
+  const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState({
     title: "",
@@ -42,6 +63,40 @@ export default function ContestsAdmin() {
       console.error("Error fetching contests:", error);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function fetchSubmissions(contestId: string) {
+    try {
+      const { data: subData, error } = await supabase
+        .from("contest_submissions")
+        .select("id, title, description, media_url, media_type, status, winner, placement, created_at, user_id")
+        .eq("contest_id", contestId)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+
+      if (!subData || subData.length === 0) {
+        setSubmissions([]);
+        return;
+      }
+
+      // Fetch user profiles separately — user_id FK points to auth.users not user_profiles
+      const userIds = subData.map((s) => s.user_id);
+      const { data: profiles } = await supabase
+        .from("user_profiles")
+        .select("id, first_name, last_name, email")
+        .in("id", userIds);
+
+      const profileMap = new Map(profiles?.map((p) => [p.id, p]) || []);
+      const merged = subData.map((s) => ({
+        ...s,
+        user_profiles: profileMap.get(s.user_id) || undefined,
+      }));
+
+      setSubmissions(merged);
+    } catch (error) {
+      console.error("Error fetching submissions:", error);
     }
   }
 
@@ -72,6 +127,69 @@ export default function ContestsAdmin() {
     } finally {
       setLoading(false);
     }
+  }
+
+  async function viewSubmissions(contest: Contest) {
+    setSelectedContest(contest);
+    setShowSubmissionsModal(true);
+    await fetchSubmissions(contest.id);
+  }
+
+  async function updateSubmissionStatus(submissionId: string, status: 'approved' | 'rejected') {
+    try {
+      const { error } = await supabase
+        .from("contest_submissions")
+        .update({ status })
+        .eq("id", submissionId);
+
+      if (error) throw error;
+
+      if (selectedContest) {
+        await fetchSubmissions(selectedContest.id);
+      }
+    } catch (error) {
+      console.error("Error updating submission:", error);
+      alert("Failed to update submission");
+    }
+  }
+
+  async function markPlacement(submissionId: string, placement: 1 | 2 | 3 | null) {
+    try {
+      if (!selectedContest) return;
+
+      // Remove this placement from any other submission
+      if (placement !== null) {
+        await supabase
+          .from("contest_submissions")
+          .update({ placement: null, winner: false })
+          .eq("contest_id", selectedContest.id)
+          .eq("placement", placement);
+      }
+
+      const { error } = await supabase
+        .from("contest_submissions")
+        .update({
+          placement,
+          winner: placement === 1,
+          status: placement !== null ? 'approved' : 'approved',
+        })
+        .eq("id", submissionId);
+
+      if (error) throw error;
+      await fetchSubmissions(selectedContest.id);
+    } catch (error) {
+      console.error("Error setting placement:", error);
+      alert("Failed to set placement");
+    }
+  }
+
+  function getStatusBadge(status: string) {
+    const styles = {
+      pending: "bg-yellow-400/20 border-yellow-400/30 text-yellow-400",
+      approved: "bg-green-400/20 border-green-400/30 text-green-400",
+      rejected: "bg-red-400/20 border-red-400/30 text-red-400"
+    };
+    return styles[status as keyof typeof styles] || styles.pending;
   }
 
   return (
@@ -129,7 +247,7 @@ export default function ContestsAdmin() {
 
               <p className="text-sm text-[#a0a0b4] mb-4 line-clamp-3">{contest.description}</p>
 
-              <div className="flex items-center gap-4 text-xs text-[#a0a0b4] pt-4 border-t border-[#D9BA84]/10">
+              <div className="flex items-center gap-4 text-xs text-[#a0a0b4] pb-4 border-b border-[#D9BA84]/10">
                 <div className="flex items-center gap-1">
                   <Calendar size={14} />
                   Ends: {new Date(contest.end_date).toLocaleDateString()}
@@ -139,6 +257,14 @@ export default function ContestsAdmin() {
                   {contest.participants || 0} participants
                 </div>
               </div>
+
+              <button
+                onClick={() => viewSubmissions(contest)}
+                className="w-full mt-4 px-4 py-2 bg-[#D9BA84]/10 border border-[#D9BA84]/30 rounded-lg text-[#D9BA84] font-semibold hover:bg-[#D9BA84]/20 transition flex items-center justify-center gap-2"
+              >
+                <Eye size={16} />
+                View Submissions
+              </button>
             </div>
           ))}
         </div>
@@ -223,6 +349,147 @@ export default function ContestsAdmin() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Submissions Modal */}
+      {showSubmissionsModal && selectedContest && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 overflow-y-auto">
+          <div className="bg-[#0d0d0d] border border-[#D9BA84]/20 rounded-2xl p-6 max-w-6xl w-full my-8">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h3 className="text-2xl font-bold">{selectedContest.title} - Submissions</h3>
+                <p className="text-sm text-[#a0a0b4] mt-1">{submissions.length} total submissions</p>
+              </div>
+              <button
+                onClick={() => setShowSubmissionsModal(false)}
+                className="text-[#a0a0b4] hover:text-white transition"
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            {submissions.length === 0 ? (
+              <div className="text-center py-12 text-[#a0a0b4]">
+                <Trophy size={48} className="mx-auto mb-4 opacity-50" />
+                <p>No submissions yet for this contest</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-[70vh] overflow-y-auto pr-2">
+                {submissions.map((submission) => (
+                  <div
+                    key={submission.id}
+                    className="bg-black border border-[#D9BA84]/13 rounded-xl overflow-hidden"
+                  >
+                    {/* Media Preview */}
+                    <div className="relative aspect-video bg-[#1a1a1a] flex items-center justify-center">
+                      {submission.media_type === 'image' ? (
+                        <img 
+                          src={submission.media_url} 
+                          alt={submission.title}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <video 
+                          src={submission.media_url}
+                          controls
+                          className="w-full h-full object-cover"
+                        />
+                      )}
+                      {submission.placement && (
+                        <div className={`absolute top-2 right-2 px-2 py-1 rounded-full flex items-center gap-1 text-xs font-bold ${
+                          submission.placement === 1 ? "bg-[#D9BA84] text-black" :
+                          submission.placement === 2 ? "bg-gray-300 text-black" :
+                          "bg-amber-700 text-white"
+                        }`}>
+                          <Trophy size={10} />
+                          {submission.placement === 1 ? "1st" : submission.placement === 2 ? "2nd" : "3rd"}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Content Details */}
+                    <div className="p-4">
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex items-center gap-2 flex-1">
+                          {submission.media_type === 'image' ? (
+                            <ImageIcon size={14} className="text-[#D9BA84] flex-shrink-0" />
+                          ) : (
+                            <VideoIcon size={14} className="text-[#D9BA84] flex-shrink-0" />
+                          )}
+                          <h4 className="font-bold text-sm line-clamp-1">{submission.title}</h4>
+                        </div>
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border ${getStatusBadge(submission.status)} flex-shrink-0 ml-2`}>
+                          {submission.status}
+                        </span>
+                      </div>
+                      
+                      {submission.description && (
+                        <p className="text-xs text-[#a0a0b4] mb-2 line-clamp-2">{submission.description}</p>
+                      )}
+
+                      <div className="text-[10px] text-[#a0a0b4] mb-3">
+                        Submitted by: {submission.user_profiles?.first_name} {submission.user_profiles?.last_name}
+                      </div>
+
+                      {/* Action Buttons */}
+                      <div className="flex gap-2">
+                        {submission.status === 'pending' && (
+                          <>
+                            <button
+                              onClick={() => updateSubmissionStatus(submission.id, 'approved')}
+                              className="flex-1 px-2 py-1.5 bg-green-400/10 border border-green-400/30 rounded text-green-400 text-xs font-semibold hover:bg-green-400/20 transition flex items-center justify-center gap-1"
+                            >
+                              <CheckCircle size={12} />
+                              Approve
+                            </button>
+                            <button
+                              onClick={() => updateSubmissionStatus(submission.id, 'rejected')}
+                              className="flex-1 px-2 py-1.5 bg-red-400/10 border border-red-400/30 rounded text-red-400 text-xs font-semibold hover:bg-red-400/20 transition flex items-center justify-center gap-1"
+                            >
+                              <XCircle size={12} />
+                              Reject
+                            </button>
+                          </>
+                        )}
+                        {submission.status === 'approved' && (
+                          <div className="w-full space-y-1.5">
+                            <p className="text-[10px] text-[#a0a0b4] font-semibold uppercase tracking-wider">Set Placement</p>
+                            <div className="flex gap-1.5">
+                              {([1, 2, 3] as const).map((place) => (
+                                <button
+                                  key={place}
+                                  onClick={() => markPlacement(submission.id, submission.placement === place ? null : place)}
+                                  className={`flex-1 py-1.5 rounded text-xs font-bold border transition flex items-center justify-center gap-1 ${
+                                    submission.placement === place
+                                      ? place === 1 ? "bg-[#D9BA84] text-black border-[#D9BA84]"
+                                        : place === 2 ? "bg-gray-300 text-black border-gray-300"
+                                        : "bg-amber-700 text-white border-amber-700"
+                                      : "bg-white/5 border-white/10 text-[#a0a0b4] hover:border-[#D9BA84]/40"
+                                  }`}
+                                >
+                                  <Medal size={10} />
+                                  {place === 1 ? "1st" : place === 2 ? "2nd" : "3rd"}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {submission.status === 'rejected' && (
+                          <button
+                            onClick={() => updateSubmissionStatus(submission.id, 'approved')}
+                            className="w-full px-2 py-1.5 bg-green-400/10 border border-green-400/30 rounded text-green-400 text-xs font-semibold hover:bg-green-400/20 transition"
+                          >
+                            Approve
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}

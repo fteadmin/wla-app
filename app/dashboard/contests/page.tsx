@@ -20,7 +20,7 @@ export default function ContestsDashboard() {
         .eq("id", auth.user.id)
         .single();
 
-      setRole(profile?.role || "basic");
+      setRole(profile?.role || "community");
       setLoading(false);
     }
     fetchUserRole();

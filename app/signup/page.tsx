@@ -8,7 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { UserPlus, Shield, ArrowLeft, Sparkles } from "lucide-react";
 
 export default function Signup() {
-	const [tier, setTier] = useState<"basic" | "admin" | null>(null);
+	const [tier, setTier] = useState<"community" | "admin" | null>(null);
 	const [hovered, setHovered] = useState<string | null>(null);
 	const [firstName, setFirstName] = useState("");
 	const [lastName, setLastName] = useState("");
@@ -43,7 +43,7 @@ export default function Signup() {
 
 		setLoading(true);
 		try {
-			// Sign up the user (trigger will auto-create basic profile)
+			// Sign up the user (trigger will auto-create community profile)
 			const { data, error: signUpError } = await supabase.auth.signUp({
 				email,
 				password,
@@ -71,7 +71,7 @@ export default function Signup() {
 
 					if (updateError) {
 						console.error("Failed to update admin role:", updateError);
-						// Don't throw error, user can still login as basic user
+						// Don't throw error, user can still login as community member
 					}
 				}
 
@@ -124,13 +124,13 @@ export default function Signup() {
 						<p className="text-[11px] font-bold uppercase tracking-widest text-gray-500 mb-3">I am signing up as</p>
 						<div className="grid grid-cols-2 gap-3 mb-5">
 							<button
-								className={`flex flex-col gap-2 p-4 rounded-xl border-2 transition-all text-left ${hovered === "basic" ? "border-[#D9BA84] bg-[#D9BA84]/10" : "border-[#D9BA84]/15 bg-[#161616]"}`}
-								onClick={() => setTier("basic")}
-								onMouseEnter={() => setHovered("basic")}
+								className={`flex flex-col gap-2 p-4 rounded-xl border-2 transition-all text-left ${hovered === "community" ? "border-[#D9BA84] bg-[#D9BA84]/10" : "border-[#D9BA84]/15 bg-[#161616]"}`}
+								onClick={() => setTier("community")}
+								onMouseEnter={() => setHovered("community")}
 								onMouseLeave={() => setHovered(null)}
 							>
 								<div className="w-8 h-8 bg-[#D9BA84]/15 text-[#D9BA84] rounded-lg flex items-center justify-center"><UserPlus size={15} /></div>
-								<span className="text-[13px] font-bold">Basic User</span>
+								<span className="text-[13px] font-bold">Community Member</span>
 								<span className="text-[11px] text-gray-400">Standard member</span>
 							</button>
 

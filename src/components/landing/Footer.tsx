@@ -2,7 +2,7 @@ const Footer = () => {
   return (
     <footer className="border-t border-border py-12">
       <div className="container mx-auto px-6">
-        <div className="grid md:grid-cols-3 gap-8 mb-8">
+        <div className="grid md:grid-cols-2 gap-8 mb-8">
           <div>
             <h3 className="font-display text-xl font-bold text-primary mb-3">WLA</h3>
             <p className="text-muted-foreground text-sm leading-relaxed">
@@ -10,19 +10,11 @@ const Footer = () => {
             </p>
           </div>
           <div>
-            <h4 className="font-semibold text-foreground text-sm uppercase tracking-wider mb-3">Platform</h4>
+            <h4 className="font-semibold text-foreground text-sm uppercase tracking-wider mb-3">Links</h4>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li>Marketplace</li>
-              <li>Contests</li>
-              <li>BLVD Tokens</li>
-            </ul>
-          </div>
-          <div>
-            <h4 className="font-semibold text-foreground text-sm uppercase tracking-wider mb-3">Community</h4>
-            <ul className="space-y-2 text-sm text-muted-foreground">
-              <li>About</li>
-              <li>Membership</li>
-              <li>Contact</li>
+              <li><a href="#about">About</a></li>
+              <li><a href="#membership">Membership</a></li>
+              <li><a href="#contact">Contact</a></li>
             </ul>
           </div>
         </div>
