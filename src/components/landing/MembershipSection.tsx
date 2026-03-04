@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 
 const tiers = [
   {
-    name: "Basic Member",
+    name: "Community Member",
     price: "$20 per year",
     period: "",
     icon: Shield,

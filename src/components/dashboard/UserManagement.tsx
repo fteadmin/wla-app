@@ -19,7 +19,7 @@ export default function UserManagement() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterRole, setFilterRole] = useState<"all" | "admin" | "basic">("all");
+  const [filterRole, setFilterRole] = useState<"all" | "admin" | "community">("all");
   const [editingTokens, setEditingTokens] = useState<{ userId: string; amount: number } | null>(null);
 
   const fetchUsers = useCallback(async () => {

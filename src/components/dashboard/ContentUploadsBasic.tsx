@@ -60,7 +60,7 @@ export default function ContentUploadsBasic() {
           <div className="flex justify-between items-start mb-6">
             <div className="mb-ico-box"><Upload size={24} /></div>
             <span className="text-[10px] font-bold bg-yellow-400/20 text-yellow-400 px-2 py-1 rounded border border-yellow-400/30 uppercase">
-              Basic User
+              Community Member
             </span>
           </div>
 

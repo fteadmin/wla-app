@@ -1,7 +1,7 @@
 "use client";
 import { useState, useRef, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Camera, Hash, X, CheckCircle, XCircle, User, Mail, Shield, Coins, Calendar } from "lucide-react";
+import { Camera, Hash, X, CheckCircle, XCircle, User, Mail, Shield, Coins, Calendar, CalendarDays, MapPin, Ticket } from "lucide-react";
 
 interface UserDetails {
   id: string;
@@ -15,6 +15,15 @@ interface UserDetails {
   created_at: string;
 }
 
+interface ActiveEvent {
+  id: string;
+  title: string;
+  event_date: string;
+  status: string;
+}
+
+type CheckInState = Record<string, "checking" | "done" | "error">;
+
 export default function QRScanner() {
   const [mode, setMode] = useState<"scan" | "manual" | null>(null);
   const [manualId, setManualId] = useState("");
@@ -24,6 +33,8 @@ export default function QRScanner() {
   const [scanning, setScanning] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const [activeEvents, setActiveEvents] = useState<ActiveEvent[]>([]);
+  const [checkInState, setCheckInState] = useState<CheckInState>({});
 
   // Cleanup camera stream on unmount
   useEffect(() => {
@@ -61,10 +72,20 @@ export default function QRScanner() {
     setScanning(false);
   }
 
+  async function fetchActiveEvents() {
+    const { data } = await supabase
+      .from("events")
+      .select("id, title, event_date, status")
+      .in("status", ["upcoming", "ongoing"])
+      .order("event_date", { ascending: true });
+    setActiveEvents(data || []);
+  }
+
   async function lookupUser(membershipId: string) {
     setLoading(true);
     setError(null);
     setUserDetails(null);
+    setCheckInState({});
 
     try {
       const { data, error } = await supabase
@@ -79,11 +100,34 @@ export default function QRScanner() {
       }
 
       setUserDetails(data);
+      fetchActiveEvents();
     } catch (err) {
       console.error("Error looking up user:", err);
       setError("An error occurred while looking up the user.");
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function checkInToEvent(eventId: string, userId: string) {
+    setCheckInState((s) => ({ ...s, [eventId]: "checking" }));
+    try {
+      // Upsert RSVP as attending + checked_in
+      const { error } = await supabase.from("event_rsvps").upsert(
+        {
+          event_id: eventId,
+          user_id: userId,
+          status: "attending",
+          checked_in: true,
+          checked_in_at: new Date().toISOString(),
+        },
+        { onConflict: "event_id,user_id" }
+      );
+      if (error) throw error;
+      setCheckInState((s) => ({ ...s, [eventId]: "done" }));
+    } catch (e) {
+      console.error(e);
+      setCheckInState((s) => ({ ...s, [eventId]: "error" }));
     }
   }
 
@@ -101,6 +145,8 @@ export default function QRScanner() {
     setManualId("");
     setUserDetails(null);
     setError(null);
+    setActiveEvents([]);
+    setCheckInState({});
     stopCamera();
   }
 
@@ -297,6 +343,60 @@ export default function QRScanner() {
               </div>
             </div>
           </div>
+
+          {/* Event Check-In */}
+          {activeEvents.length > 0 && (
+            <div className="bg-[#000000] border border-[#D9BA84]/20 rounded-xl p-5">
+              <div className="flex items-center gap-2 mb-4">
+                <Ticket size={16} className="text-[#D9BA84]" />
+                <h4 className="font-bold text-sm">Event Check-In</h4>
+                <span className="ml-auto text-xs text-[#a0a0b4]">{activeEvents.length} active event{activeEvents.length !== 1 ? "s" : ""}</span>
+              </div>
+              <div className="space-y-2">
+                {activeEvents.map((event) => {
+                  const state = checkInState[event.id];
+                  return (
+                    <div key={event.id} className="flex items-center justify-between gap-3 py-2 px-3 bg-[#0d0d0d] rounded-lg border border-white/5">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold truncate">{event.title}</p>
+                        <div className="flex items-center gap-1 text-xs text-[#a0a0b4] mt-0.5">
+                          <CalendarDays size={10} />
+                          {new Date(event.event_date).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+                          <span className={`ml-2 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase ${
+                            event.status === "ongoing" ? "bg-green-400/20 text-green-400" : "bg-blue-400/20 text-blue-400"
+                          }`}>{event.status}</span>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => checkInToEvent(event.id, userDetails!.id)}
+                        disabled={state === "checking" || state === "done"}
+                        className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold border transition flex-shrink-0 ${
+                          state === "done"
+                            ? "bg-green-400/20 border-green-400/30 text-green-400 cursor-default"
+                            : state === "error"
+                            ? "bg-red-400/20 border-red-400/30 text-red-400"
+                            : state === "checking"
+                            ? "bg-white/5 border-white/10 text-[#a0a0b4] cursor-wait"
+                            : "bg-[#D9BA84]/10 border-[#D9BA84]/30 text-[#D9BA84] hover:bg-[#D9BA84]/20"
+                        }`}
+                      >
+                        {state === "done" ? <><CheckCircle size={12} /> Checked In</> :
+                         state === "checking" ? "..." :
+                         state === "error" ? "Retry" :
+                         <><Ticket size={12} /> Check In</>}
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+          {activeEvents.length === 0 && (
+            <div className="py-3 px-4 bg-[#000000] border border-white/5 rounded-xl text-xs text-[#a0a0b4] flex items-center gap-2">
+              <CalendarDays size={14} />
+              No active events right now
+            </div>
+          )}
 
           <button
             onClick={reset}

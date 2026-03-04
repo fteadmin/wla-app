@@ -11,7 +11,7 @@ import { Elements } from "@stripe/react-stripe-js";
 const stripePromise = loadStripe("pk_test_YOUR_STRIPE_PUBLISHABLE_KEY");
 
 const PLAN = {
-  name: "Basic Membership",
+  name: "Community Membership",
   price: 20,
   badge: "Current Offering",
   features: [

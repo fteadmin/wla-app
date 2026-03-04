@@ -6,20 +6,24 @@ import { Users, FileText, DollarSign, TrendingUp, Activity } from "lucide-react"
 interface Stats {
   totalUsers: number;
   totalAdmins: number;
-  totalBasic: number;
+  totalCommunity: number;
   activeMembers: number;
   totalTransactions: number;
   totalRevenue: number;
+  membershipRevenue: number;
+  tokenRevenue: number;
 }
 
 export default function StatsOverview() {
   const [stats, setStats] = useState<Stats>({
     totalUsers: 0,
     totalAdmins: 0,
-    totalBasic: 0,
+    totalCommunity: 0,
     activeMembers: 0,
     totalTransactions: 0,
     totalRevenue: 0,
+    membershipRevenue: 0,
+    tokenRevenue: 0,
   });
   const [loading, setLoading] = useState(true);
 
@@ -36,24 +40,34 @@ export default function StatsOverview() {
 
       const totalUsers = allUsers?.length || 0;
       const totalAdmins = allUsers?.filter(u => u.role === "admin").length || 0;
-      const totalBasic = allUsers?.filter(u => u.role === "basic").length || 0;
+      const totalCommunity = allUsers?.filter(u => u.role === "community").length || 0;
       const activeMembers = allUsers?.filter(u => u.membership_status === "active").length || 0;
 
-      // Fetch transaction data (token purchases)
+      // Fetch token purchase revenue
       const { data: tokenPurchases } = await supabase
         .from("token_purchases")
         .select("amount");
 
-      const totalTransactions = tokenPurchases?.length || 0;
-      const totalRevenue = tokenPurchases?.reduce((sum, purchase) => sum + (purchase.amount || 0), 0) || 0;
+      // Fetch membership payment revenue
+      const { data: membershipPayments } = await supabase
+        .from("membership_payments")
+        .select("amount")
+        .eq("status", "completed");
+
+      const tokenRevenue = tokenPurchases?.reduce((sum, p) => sum + (p.amount || 0), 0) || 0;
+      const membershipRevenue = membershipPayments?.reduce((sum, p) => sum + (p.amount || 0), 0) || 0;
+      const totalTransactions = (tokenPurchases?.length || 0) + (membershipPayments?.length || 0);
+      const totalRevenue = tokenRevenue + membershipRevenue;
 
       setStats({
         totalUsers,
         totalAdmins,
-        totalBasic,
+        totalCommunity,
         activeMembers,
         totalTransactions,
         totalRevenue,
+        membershipRevenue,
+        tokenRevenue,
       });
     } catch (error) {
       console.error("Error fetching stats:", error);
@@ -94,7 +108,7 @@ export default function StatsOverview() {
           </div>
           <div className="flex items-center gap-1">
             <div className="w-2 h-2 rounded-full bg-[#a0a0b4]"></div>
-            <span className="text-[#a0a0b4]">{stats.totalBasic} Basic</span>
+            <span className="text-[#a0a0b4]">{stats.totalCommunity} Community</span>
           </div>
         </div>
       </div>
@@ -125,12 +139,19 @@ export default function StatsOverview() {
             <DollarSign size={24} className="text-blue-400" />
           </div>
           <div>
-            <div className="text-3xl font-bold">{stats.totalTransactions}</div>
-            <div className="text-xs text-[#a0a0b4]">Total Transactions</div>
+            <div className="text-3xl font-bold">${(stats.totalRevenue / 100).toFixed(2)}</div>
+            <div className="text-xs text-[#a0a0b4]">Total Revenue</div>
           </div>
         </div>
-        <div className="text-xs text-[#a0a0b4]">
-          ${(stats.totalRevenue / 100).toFixed(2)} total revenue
+        <div className="flex items-center gap-4 text-xs">
+          <div className="flex items-center gap-1">
+            <div className="w-2 h-2 rounded-full bg-blue-400"></div>
+            <span className="text-[#a0a0b4]">Memberships: ${(stats.membershipRevenue / 100).toFixed(2)}</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <div className="w-2 h-2 rounded-full bg-[#D9BA84]"></div>
+            <span className="text-[#a0a0b4]">Tokens: ${(stats.tokenRevenue / 100).toFixed(2)}</span>
+          </div>
         </div>
       </div>
     </div>

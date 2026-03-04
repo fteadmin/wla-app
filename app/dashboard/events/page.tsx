@@ -2,10 +2,10 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import TopNav from "../../../src/components/dashboard/TopNav";
-import MarketplaceAdmin from "../../../src/components/dashboard/MarketplaceAdmin";
-import MarketplaceBasic from "../../../src/components/dashboard/MarketplaceBasic";
+import EventsAdmin from "../../../src/components/dashboard/EventsAdmin";
+import EventsBasic from "../../../src/components/dashboard/EventsBasic";
 
-export default function MarketplaceDashboard() {
+export default function EventsDashboard() {
   const [role, setRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -13,13 +13,11 @@ export default function MarketplaceDashboard() {
     async function fetchUserRole() {
       const { data: auth } = await supabase.auth.getUser();
       if (!auth.user) return;
-
       const { data: profile } = await supabase
         .from("user_profiles")
         .select("role")
         .eq("id", auth.user.id)
         .single();
-
       setRole(profile?.role || "community");
       setLoading(false);
     }
@@ -39,7 +37,7 @@ export default function MarketplaceDashboard() {
       <TopNav />
       <main className="flex-1 w-full">
         <div className="p-8">
-          {role === "admin" ? <MarketplaceAdmin /> : <MarketplaceBasic />}
+          {role === "admin" ? <EventsAdmin /> : <EventsBasic />}
         </div>
       </main>
     </div>

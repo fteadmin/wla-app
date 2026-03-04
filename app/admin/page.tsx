@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { 
   Shield, Users, Coins, DollarSign, Activity, 
   Camera, Hash, Search, Plus, Minus, RotateCcw,
-  Trophy, ShoppingBag, X, Calendar, CheckCircle, XCircle
+  Trophy, ShoppingBag, X, Calendar, CheckCircle, XCircle,
+  CalendarDays, ChevronRight, Medal, Settings
 } from "lucide-react";
 import { Html5QrcodeScanner } from "html5-qrcode";
 import UserManagement from "@/components/dashboard/UserManagement";
@@ -736,6 +737,59 @@ export default function AdminPage() {
 
         {/* User Management Section */}
         <UserManagement />
+
+        {/* Admin Command Center */}
+        <div className="bg-[#0d0d0d] border border-[#D9BA84]/20 rounded-2xl p-6">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-10 h-10 rounded-xl bg-[#D9BA84]/10 border border-[#D9BA84]/20 flex items-center justify-center">
+              <Settings size={18} className="text-[#D9BA84]" />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-white">Admin Command Center</h2>
+              <p className="text-xs text-[#a0a0b4]">Quick access to management tools</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Contest Management */}
+            <a
+              href="/dashboard/contests"
+              className="group flex items-center gap-4 bg-[#111] border border-[#D9BA84]/15 hover:border-[#D9BA84]/40 rounded-xl p-5 transition-all duration-200 hover:bg-[#D9BA84]/5"
+            >
+              <div className="w-12 h-12 rounded-xl bg-[#D9BA84]/10 border border-[#D9BA84]/20 flex items-center justify-center flex-shrink-0 group-hover:bg-[#D9BA84]/15 transition-colors">
+                <Trophy size={22} className="text-[#D9BA84]" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="font-semibold text-white text-sm mb-1">Contest Management</div>
+                <div className="text-xs text-[#a0a0b4] leading-relaxed">Review submissions, assign 1st, 2nd &amp; 3rd place winners</div>
+                <div className="flex items-center gap-1 mt-2 text-xs text-[#D9BA84]/70">
+                  <Medal size={11} />
+                  <span>Manage placements</span>
+                </div>
+              </div>
+              <ChevronRight size={18} className="text-[#a0a0b4] group-hover:text-[#D9BA84] transition-colors flex-shrink-0" />
+            </a>
+
+            {/* Events Management */}
+            <a
+              href="/dashboard/events"
+              className="group flex items-center gap-4 bg-[#111] border border-[#D9BA84]/15 hover:border-[#D9BA84]/40 rounded-xl p-5 transition-all duration-200 hover:bg-[#D9BA84]/5"
+            >
+              <div className="w-12 h-12 rounded-xl bg-[#D9BA84]/10 border border-[#D9BA84]/20 flex items-center justify-center flex-shrink-0 group-hover:bg-[#D9BA84]/15 transition-colors">
+                <CalendarDays size={22} className="text-[#D9BA84]" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="font-semibold text-white text-sm mb-1">Events Management</div>
+                <div className="text-xs text-[#a0a0b4] leading-relaxed">Create events, manage RSVPs and track attendance</div>
+                <div className="flex items-center gap-1 mt-2 text-xs text-[#D9BA84]/70">
+                  <Users size={11} />
+                  <span>Manage RSVPs</span>
+                </div>
+              </div>
+              <ChevronRight size={18} className="text-[#a0a0b4] group-hover:text-[#D9BA84] transition-colors flex-shrink-0" />
+            </a>
+          </div>
+        </div>
       </div>
     </div>
   );
