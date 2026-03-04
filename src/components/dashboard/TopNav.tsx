@@ -1,46 +1,43 @@
 "use client";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Bell, ChevronRight, Calendar, Coins, Trophy, CheckCircle } from "lucide-react";
+import { Bell, ChevronRight, Calendar, Coins, Trophy, CheckCircle, Star } from "lucide-react";
+import { useNotifications, timeAgo, type NotifType } from "@/hooks/useNotifications";
 
-interface Notification {
-  id: number;
-  type: "event" | "reward" | "contest" | "system";
-  title: string;
-  time: string;
-  unread: boolean;
-}
-
-const INITIAL_NOTIFS: Notification[] = [
-  { id: 1, type: "event",   title: "Monthly Cruise this Saturday",    time: "2h ago",  unread: true  },
-  { id: 2, type: "reward",  title: "You earned 150 tokens!",          time: "1d ago",  unread: true  },
-  { id: 3, type: "contest", title: "Photo Contest ends in 3 days",    time: "2d ago",  unread: false },
-  { id: 4, type: "system",  title: "Membership renewed successfully", time: "5d ago",  unread: false },
-];
-
-const notifConfig = {
+const notifConfig: Record<NotifType | string, { icon: typeof Calendar; color: string }> = {
+  new_event:            { icon: Calendar,     color: "text-[#D9BA84]" },
+  rsvp_confirmed:       { icon: Calendar,     color: "text-[#D9BA84]" },
+  new_contest:          { icon: Trophy,       color: "text-[#D9BA84]" },
+  token_purchase:       { icon: Coins,        color: "text-[#c8b450]" },
+  membership_activated: { icon: CheckCircle,  color: "text-[#a0a0b4]" },
+  // legacy fallbacks
   event:   { icon: Calendar,    color: "text-[#D9BA84]" },
   reward:  { icon: Coins,       color: "text-[#c8b450]" },
   contest: { icon: Trophy,      color: "text-[#D9BA84]" },
   system:  { icon: CheckCircle, color: "text-[#a0a0b4]" },
 };
 
+const fallbackConfig = { icon: Star, color: "text-[#a0a0b4]" };
+
 interface TopNavProps {
   tokens?: number;
 }
 
 export default function TopNav({ tokens: tokensProp = 0 }: TopNavProps) {
+  const [userId, setUserId]               = useState<string | undefined>(undefined);
   const [memberName, setMemberName]       = useState("");
   const [memberInitials, setMemberInitials] = useState("");
   const [tokens, setTokens]               = useState(tokensProp);
   const [open, setOpen]                   = useState(false);
-  const [notifs, setNotifs]               = useState<Notification[]>(INITIAL_NOTIFS);
-  const unread = notifs.filter(n => n.unread).length;
+
+  const { notifications, markRead, markAllRead, unreadCount } = useNotifications(userId);
 
   useEffect(() => {
     async function fetchProfile() {
       const { data: auth } = await supabase.auth.getUser();
       if (!auth.user) return;
+
+      setUserId(auth.user.id);
 
       type UserProfileRow = import("@/integrations/supabase/types").Database["public"]["Tables"]["user_profiles"]["Row"];
       let profile: UserProfileRow | null = null;
@@ -49,9 +46,7 @@ export default function TopNav({ tokens: tokensProp = 0 }: TopNavProps) {
         .select("id,first_name,last_name,email,role,tokens")
         .eq("id", auth.user.id)
         .maybeSingle<UserProfileRow>();
-      if (!error && data) {
-        profile = data;
-      }
+      if (!error && data) profile = data;
 
       const first = profile?.first_name || auth.user.user_metadata?.first_name || "";
       const last  = profile?.last_name  || auth.user.user_metadata?.last_name  || "";
@@ -66,9 +61,6 @@ export default function TopNav({ tokens: tokensProp = 0 }: TopNavProps) {
     }
     fetchProfile();
   }, [tokensProp]);
-
-  const markRead = (id: number) =>
-    setNotifs(ns => ns.map(n => n.id === id ? { ...n, unread: false } : n));
 
   return (
     <header className="sticky top-0 z-30 h-[60px] flex items-center px-3 sm:px-6 gap-2 sm:gap-4 bg-black/85 backdrop-blur-md border-b border-[#D9BA84]/12 font-sora flex-shrink-0"
@@ -88,7 +80,7 @@ export default function TopNav({ tokens: tokensProp = 0 }: TopNavProps) {
       {/* Right cluster */}
       <div className="flex items-center gap-2">
 
-        {/* Token chip — hidden on mobile */}
+        {/* Token chip */}
         <div className="hidden sm:flex items-center gap-1.5 px-3 py-[5px] rounded-full bg-[#D9BA84]/8 border border-[#D9BA84]/18 cursor-default hover:bg-[#D9BA84]/12 hover:border-[#D9BA84]/35 transition-all">
           <span className="w-1.5 h-1.5 rounded-full bg-[#D9BA84] shadow-[0_0_6px_rgba(217,186,132,0.7)]" />
           <span className="text-[12px] font-bold text-[#D9BA84] font-code">{tokens.toLocaleString()}</span>
@@ -103,9 +95,9 @@ export default function TopNav({ tokens: tokensProp = 0 }: TopNavProps) {
             aria-label="Notifications"
           >
             <Bell size={15} />
-            {unread > 0 && (
+            {unreadCount > 0 && (
               <span className="absolute -top-[3px] -right-[3px] min-w-[16px] h-4 rounded-lg bg-gradient-to-br from-[#D9BA84] to-[#c8b450] border-2 border-black flex items-center justify-center text-[9px] font-bold text-black font-code px-0.5">
-                {unread}
+                {unreadCount}
               </span>
             )}
           </button>
@@ -115,14 +107,21 @@ export default function TopNav({ tokens: tokensProp = 0 }: TopNavProps) {
               {/* Header */}
               <div className="flex items-center justify-between px-4 py-3 border-b border-[#D9BA84]/10">
                 <span className="text-[13px] font-bold text-white">Notifications</span>
-                {unread > 0 && (
-                  <span className="text-[10px] text-[#D9BA84] bg-[#D9BA84]/10 px-2 py-0.5 rounded-full font-bold">{unread} new</span>
+                {unreadCount > 0 && (
+                  <button
+                    onClick={markAllRead}
+                    className="text-[10px] text-[#D9BA84] bg-[#D9BA84]/10 px-2 py-0.5 rounded-full font-bold hover:bg-[#D9BA84]/20 transition-colors"
+                  >
+                    {unreadCount} new · Mark all read
+                  </button>
                 )}
               </div>
 
               {/* Items */}
-              {notifs.map(n => {
-                const cfg = notifConfig[n.type];
+              {notifications.length === 0 ? (
+                <div className="px-4 py-6 text-center text-[12px] text-[#a0a0b4]">No notifications yet.</div>
+              ) : notifications.slice(0, 8).map(n => {
+                const cfg = notifConfig[n.type] ?? fallbackConfig;
                 const Ico = cfg.icon;
                 return (
                   <div
@@ -134,10 +133,10 @@ export default function TopNav({ tokens: tokensProp = 0 }: TopNavProps) {
                       <Ico size={13} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className={`text-[12px] text-white leading-snug ${n.unread ? "font-semibold" : "font-normal"}`}>{n.title}</div>
-                      <div className="text-[10px] text-[#a0a0b4] mt-0.5">{n.time}</div>
+                      <div className={`text-[12px] text-white leading-snug ${n.read ? "font-normal" : "font-semibold"}`}>{n.title}</div>
+                      <div className="text-[10px] text-[#a0a0b4] mt-0.5">{timeAgo(n.created_at)}</div>
                     </div>
-                    {n.unread && <span className="w-1.5 h-1.5 rounded-full bg-[#D9BA84] mt-1 flex-shrink-0" />}
+                    {!n.read && <span className="w-1.5 h-1.5 rounded-full bg-[#D9BA84] mt-1 flex-shrink-0" />}
                   </div>
                 );
               })}
