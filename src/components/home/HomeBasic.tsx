@@ -1,10 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, ReactNode } from "react";
 import Link from "next/link";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Trophy, CheckCircle, Clock, ChevronRight,
   Star, Users, Calendar, TrendingUp, Coins,
-  Car, Flame, Hash, Sparkles, Zap,
+  Car, Hash, Sparkles, Zap,
   Shield, Upload, ShoppingBag,
 } from "lucide-react";
 
@@ -21,6 +21,7 @@ const animations = `
   .fu5 { animation: fadeUp 0.45s cubic-bezier(0.16,1,0.3,1) 0.25s both; }
   .fu6 { animation: fadeUp 0.45s cubic-bezier(0.16,1,0.3,1) 0.31s both; }
 `;
+void animations; // suppress unused-var warning
 
 // ─── Supabase data hook ───────────────────────────────────────────────────────
 function useMemberData() {
@@ -42,7 +43,7 @@ function useMemberData() {
         .select("*")
         .eq("id", auth.user.id)
         .single();
-      
+
       if (!error && data) {
         profile = data as Record<string, unknown>;
       }
@@ -68,13 +69,129 @@ function useMemberData() {
   return { member, loading };
 }
 
-// ─── Static data ──────────────────────────────────────────────────────────────
-const CONTESTS = [
-  { id: 1, title: "Best Off-Road Build",  prize: "2,000 tokens + Trophy", ends: "Mar 15", entries: 47, category: "Builds",      hot: true  },
-  { id: 2, title: "Spring Trail Photo",   prize: "1,000 tokens",          ends: "Mar 22", entries: 31, category: "Photography", hot: false },
-  { id: 3, title: "Member of the Month",  prize: "500 tokens + Badge",    ends: "Mar 31", entries: 18, category: "Community",  hot: false },
-];
+// ─── Live contests hook ───────────────────────────────────────────────────────
+type ContestRow = { id: string; title: string; prize: string; end_date: string; entries: number };
 
+function useContests() {
+  const [contests, setContests] = useState<ContestRow[]>([]);
+
+  useEffect(() => {
+    async function fetch() {
+      const today = new Date().toISOString().split("T")[0];
+      const { data } = await supabase
+        .from("contests")
+        .select("id, title, prize, end_date, contest_participants(user_id)")
+        .gte("end_date", today)
+        .order("end_date", { ascending: true })
+        .limit(3);
+
+      if (data) {
+        setContests(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          data.map((c: any) => ({
+            id:       c.id,
+            title:    c.title,
+            prize:    c.prize,
+            end_date: c.end_date,
+            entries:  Array.isArray(c.contest_participants) ? c.contest_participants.length : 0,
+          }))
+        );
+      }
+    }
+    fetch();
+  }, []);
+
+  return contests;
+}
+
+// ─── Live stats hook ──────────────────────────────────────────────────────────
+function useStats(userId: string | undefined) {
+  const [stats, setStats] = useState({ eventsAttended: 0, contestsEntered: 0 });
+
+  useEffect(() => {
+    if (!userId) return;
+    async function fetch() {
+      const [{ count: eventsCount }, { count: contestsCount }] = await Promise.all([
+        supabase
+          .from("event_rsvps")
+          .select("*", { count: "exact", head: true })
+          .eq("user_id", userId)
+          .eq("status", "attending"),
+        supabase
+          .from("contest_participants")
+          .select("*", { count: "exact", head: true })
+          .eq("user_id", userId),
+      ]);
+      setStats({ eventsAttended: eventsCount ?? 0, contestsEntered: contestsCount ?? 0 });
+    }
+    fetch();
+  }, [userId]);
+
+  return stats;
+}
+
+// ─── Live recent activity hook ────────────────────────────────────────────────
+type ActivityItem = { label: string; time: string; icon: typeof Trophy; date: Date };
+
+function useRecentActivity(userId: string | undefined) {
+  const [activity, setActivity] = useState<ActivityItem[]>([]);
+
+  useEffect(() => {
+    if (!userId) return;
+    async function fetch() {
+      const formatTime = (d: string) => {
+        const date = new Date(d);
+        const diff = Math.floor((Date.now() - date.getTime()) / 86400000);
+        if (diff === 0) return "Today";
+        if (diff === 1) return "Yesterday";
+        return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+      };
+
+      const [{ data: rsvps }, { data: entries }] = await Promise.all([
+        supabase
+          .from("event_rsvps")
+          .select("created_at, events(title)")
+          .eq("user_id", userId)
+          .eq("status", "attending")
+          .order("created_at", { ascending: false })
+          .limit(4),
+        supabase
+          .from("contest_participants")
+          .select("joined_at, contests(title)")
+          .eq("user_id", userId)
+          .order("joined_at", { ascending: false })
+          .limit(4),
+      ]);
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const rsvpItems: ActivityItem[] = (rsvps || []).map((r: any) => ({
+        label: `Attending "${r.events?.title}"`,
+        time:  formatTime(r.created_at),
+        icon:  Calendar,
+        date:  new Date(r.created_at),
+      }));
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const entryItems: ActivityItem[] = (entries || []).map((e: any) => ({
+        label: `Entered '${e.contests?.title}' contest`,
+        time:  formatTime(e.joined_at),
+        icon:  Trophy,
+        date:  new Date(e.joined_at),
+      }));
+
+      setActivity(
+        [...rsvpItems, ...entryItems]
+          .sort((a, b) => b.date.getTime() - a.date.getTime())
+          .slice(0, 4)
+      );
+    }
+    fetch();
+  }, [userId]);
+
+  return activity;
+}
+
+// ─── Static data ──────────────────────────────────────────────────────────────
 const NOTIFICATIONS = [
   { id: 1, icon: Calendar,     color: "text-[#D9BA84]", title: "Monthly Cruise this Saturday",    time: "2h ago",  unread: true  },
   { id: 2, icon: Coins,        color: "text-[#c8b450]", title: "You earned 150 tokens!",          time: "1d ago",  unread: true  },
@@ -82,25 +199,11 @@ const NOTIFICATIONS = [
   { id: 4, icon: CheckCircle,  color: "text-[#a0a0b4]", title: "Membership renewed successfully", time: "5d ago",  unread: false },
 ];
 
-const STATS = [
-  { label: "Events Attended",  value: 12,  icon: Calendar   },
-  { label: "Contests Entered", value: 5,   icon: Trophy     },
-  { label: "Forum Posts",      value: 38,  icon: Users      },
-  { label: "Miles Logged",     value: 820, icon: TrendingUp },
-];
-
 const QUICK_ACTIONS = [
-  { label: "Join Contest",   icon: Trophy,      to: "/dashboard/contests"        },
-  { label: "Marketplace",    icon: ShoppingBag, to: "/dashboard/marketplace"     },
-  { label: "My Contents", icon: Upload,      to: "/dashboard/my-contents" },
-  { label: "My Membership",  icon: Shield,      to: "/dashboard/membership"      },
-];
-
-const RECENT_ACTIVITY = [
-  { label: "Entered 'Best Off-Road Build' contest", time: "Today",     icon: Trophy   },
-  { label: "Uploaded trail photo from Mojave trip", time: "Yesterday", icon: Upload   },
-  { label: "Redeemed 200 tokens for sticker pack",  time: "Mar 2",    icon: Coins    },
-  { label: "Attended March Community Meetup",       time: "Feb 28",   icon: Calendar },
+  { label: "Join Contest",   icon: Trophy,      to: "/dashboard/contests"    },
+  { label: "Marketplace",    icon: ShoppingBag, to: "/dashboard/marketplace" },
+  { label: "My Contents",    icon: Upload,      to: "/dashboard/my-contents" },
+  { label: "My Membership",  icon: Shield,      to: "/dashboard/membership"  },
 ];
 
 // ─── Decorative QR ────────────────────────────────────────────────────────────
@@ -165,7 +268,7 @@ function TokenRing({ value, max }: { value: number; max: number }) {
 }
 
 // ─── Shared sub-components ────────────────────────────────────────────────────
-function SectionLabel({ children }: { children: React.ReactNode }) {
+function SectionLabel({ children }: { children: ReactNode }) {
   return (
     <div className="flex items-center gap-3 mb-3.5 text-[10px] font-bold tracking-[0.1em] uppercase text-[#a0a0b4]">
       {children}
@@ -174,7 +277,7 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
   );
 }
 
-function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
   return (
     <div className={`bg-[#0d0d0d] border border-[#D9BA84]/13 rounded-2xl transition-all duration-250 hover:border-[#D9BA84]/32 hover:-translate-y-0.5 hover:shadow-[0_14px_40px_rgba(0,0,0,0.65)] ${className}`}>
       {children}
@@ -185,13 +288,23 @@ function Card({ children, className = "" }: { children: React.ReactNode; classNa
 // ─── Main component ───────────────────────────────────────────────────────────
 export default function HomeBasic() {
   const { member, loading } = useMemberData();
-  const [tokens, setTokens] = useState(0);
-  const [notifs, setNotifs] = useState(NOTIFICATIONS);
+  const contests             = useContests();
+  const stats                = useStats(member?.id);
+  const recentActivity       = useRecentActivity(member?.id);
+  const [tokens, setTokens]  = useState(0);
+  const [notifs, setNotifs]  = useState(NOTIFICATIONS);
 
   useEffect(() => { if (member) setTokens(member.tokens); }, [member]);
 
   const markRead = (id: number) =>
     setNotifs(ns => ns.map(n => n.id === id ? { ...n, unread: false } : n));
+
+  const statsCards = [
+    { label: "Events Attended",  value: stats.eventsAttended,  icon: Calendar   },
+    { label: "Contests Entered", value: stats.contestsEntered, icon: Trophy     },
+    { label: "Forum Posts",      value: 0,                     icon: Users      },
+    { label: "Miles Logged",     value: 0,                     icon: TrendingUp },
+  ];
 
   if (loading) {
     return (
@@ -221,7 +334,7 @@ export default function HomeBasic() {
             Hey, {member.name?.split(" ")[0]} 👋
           </h1>
           <p className="text-sm text-[#a0a0b4]">
-            Here's what's happening in your club today.
+            Here&apos;s what&apos;s happening in your club today.
           </p>
         </div>
 
@@ -260,13 +373,13 @@ export default function HomeBasic() {
                 <div className="text-[11px] text-[#a0a0b4] mt-2">Member since {member.since}</div>
               </div>
 
-              {/* QR Code - Show real membership QR if active, otherwise fake */}
+              {/* QR Code */}
               <div className="flex flex-col items-center gap-1.5 bg-[#D9BA84]/5 border border-[#D9BA84]/15 rounded-[14px] p-3 flex-shrink-0">
                 {member.membershipStatus === "active" && member.qrCode ? (
                   <>
-                    <img 
-                      src={member.qrCode} 
-                      alt="Membership QR Code" 
+                    <img
+                      src={member.qrCode}
+                      alt="Membership QR Code"
                       className="w-[90px] h-[90px] rounded-md"
                     />
                     <span className="text-[9px] font-bold tracking-[0.1em] uppercase text-[#D9BA84]">
@@ -309,12 +422,12 @@ export default function HomeBasic() {
                 Redeem
               </button>
             </div>
-          </Card>          
+          </Card>
         </div>
 
         {/* ── Stats ── */}
         <div className="fu3 grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-          {STATS.map((s, i) => {
+          {statsCards.map((s, i) => {
             const Icon = s.icon;
             return (
               <Card key={i} className="p-4">
@@ -386,7 +499,7 @@ export default function HomeBasic() {
             </div>
           </Card>
 
-          {/* Active Contests */}
+          {/* Active Contests — live from DB */}
           <Card className="p-5">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2 text-[13px] font-bold text-white">
@@ -397,38 +510,37 @@ export default function HomeBasic() {
               </button>
             </div>
             <div className="flex flex-col gap-2">
-              {CONTESTS.map(c => (
-                <div key={c.id} className="relative overflow-hidden px-3.5 py-3 rounded-[14px] bg-[#161616] border border-[#D9BA84]/10 cursor-pointer hover:border-[#D9BA84]/32 hover:translate-x-1 transition-all duration-200 group">
-                  {/* Left accent bar */}
-                  <span className="absolute left-0 top-0 bottom-0 w-[3px] rounded-r-[3px] bg-gradient-to-b from-[#D9BA84] to-[#c8b450] opacity-0 group-hover:opacity-100 transition-opacity" />
-                  <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-[9px] font-bold tracking-[0.1em] uppercase text-[#c8b450] bg-[#c8b450]/10 border border-[#c8b450]/20 px-2 py-0.5 rounded-full">{c.category}</span>
-                    {c.hot && (
-                      <span className="flex items-center gap-1 text-[9px] font-bold text-[#D9BA84] bg-[#D9BA84]/10 border border-[#D9BA84]/20 px-2 py-0.5 rounded-full">
-                        <Flame size={9} /> Hot
-                      </span>
-                    )}
+              {contests.length === 0 ? (
+                <div className="text-[12px] text-[#a0a0b4] py-4 text-center">No active contests right now.</div>
+              ) : contests.map(c => {
+                const ends = new Date(c.end_date).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+                return (
+                  <div key={c.id} className="relative overflow-hidden px-3.5 py-3 rounded-[14px] bg-[#161616] border border-[#D9BA84]/10 cursor-pointer hover:border-[#D9BA84]/32 hover:translate-x-1 transition-all duration-200 group">
+                    {/* Left accent bar */}
+                    <span className="absolute left-0 top-0 bottom-0 w-[3px] rounded-r-[3px] bg-gradient-to-b from-[#D9BA84] to-[#c8b450] opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <div className="text-[14px] font-semibold text-white mb-2">{c.title}</div>
+                    <div className="flex items-center gap-3 flex-wrap">
+                      <span className="flex items-center gap-1 text-[12px] font-semibold text-[#D9BA84]"><Coins size={11} /> {c.prize}</span>
+                      <span className="flex items-center gap-1 text-[11px] text-[#a0a0b4]"><Clock size={10} /> {ends}</span>
+                      <span className="flex items-center gap-1 text-[11px] text-[#a0a0b4]"><Users size={10} /> {c.entries}</span>
+                    </div>
+                    <button className="mt-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-[8px] bg-gradient-to-br from-[#D9BA84] to-[#c8b450] text-black text-[11px] font-bold hover:opacity-88 hover:scale-[1.03] transition-all font-sora">
+                      <Zap size={10} /> Enter
+                    </button>
                   </div>
-                  <div className="text-[14px] font-semibold text-white mb-2">{c.title}</div>
-                  <div className="flex items-center gap-3 flex-wrap">
-                    <span className="flex items-center gap-1 text-[12px] font-semibold text-[#D9BA84]"><Coins size={11} /> {c.prize}</span>
-                    <span className="flex items-center gap-1 text-[11px] text-[#a0a0b4]"><Clock size={10} /> {c.ends}</span>
-                    <span className="flex items-center gap-1 text-[11px] text-[#a0a0b4]"><Users size={10} /> {c.entries}</span>
-                  </div>
-                  <button className="mt-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-[8px] bg-gradient-to-br from-[#D9BA84] to-[#c8b450] text-black text-[11px] font-bold hover:opacity-88 hover:scale-[1.03] transition-all font-sora">
-                    <Zap size={10} /> Enter
-                  </button>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </Card>
         </div>
 
-        {/* ── Recent Activity ── */}
+        {/* ── Recent Activity — live from DB ── */}
         <div className="fu6">
           <SectionLabel>Recent Activity</SectionLabel>
           <Card className="px-3 py-2">
-            {RECENT_ACTIVITY.map((a, i) => {
+            {recentActivity.length === 0 ? (
+              <div className="text-[12px] text-[#a0a0b4] py-4 text-center px-3">No recent activity yet.</div>
+            ) : recentActivity.map((a, i) => {
               const Icon = a.icon;
               return (
                 <div key={i}>
@@ -441,7 +553,7 @@ export default function HomeBasic() {
                       <div className="text-[11px] text-[#a0a0b4] mt-0.5">{a.time}</div>
                     </div>
                   </div>
-                  {i < RECENT_ACTIVITY.length - 1 && (
+                  {i < recentActivity.length - 1 && (
                     <div className="ml-[28px] w-px h-2.5 bg-[#D9BA84]/10 mx-auto" style={{ marginLeft: "28px" }} />
                   )}
                 </div>
