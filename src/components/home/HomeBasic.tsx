@@ -192,13 +192,14 @@ function useRecentActivity(userId: string | undefined) {
   return activity;
 }
 
-// ─── Static data ──────────────────────────────────────────────────────────────
-const NOTIFICATIONS = [
-  { id: 1, icon: Calendar,     color: "text-[#D9BA84]", title: "Monthly Cruise this Saturday",    time: "2h ago",  unread: true  },
-  { id: 2, icon: Coins,        color: "text-[#c8b450]", title: "You earned 150 tokens!",          time: "1d ago",  unread: true  },
-  { id: 3, icon: Trophy,       color: "text-[#D9BA84]", title: "Photo Contest ends in 3 days",    time: "2d ago",  unread: false },
-  { id: 4, icon: CheckCircle,  color: "text-[#a0a0b4]", title: "Membership renewed successfully", time: "5d ago",  unread: false },
-];
+// ─── Notification icon map ────────────────────────────────────────────────────
+const notifIconMap: Record<string, { icon: typeof Calendar; color: string }> = {
+  new_event:            { icon: Calendar,    color: "text-[#D9BA84]" },
+  rsvp_confirmed:       { icon: Calendar,    color: "text-[#D9BA84]" },
+  new_contest:          { icon: Trophy,      color: "text-[#D9BA84]" },
+  token_purchase:       { icon: Coins,       color: "text-[#c8b450]" },
+  membership_activated: { icon: CheckCircle, color: "text-[#a0a0b4]" },
+};
 
 const QUICK_ACTIONS = [
   { label: "Join Contest",   icon: Trophy,      to: "/dashboard/contests"    },
@@ -293,12 +294,9 @@ export default function HomeBasic() {
   const stats                = useStats(member?.id);
   const recentActivity       = useRecentActivity(member?.id);
   const [tokens, setTokens]  = useState(0);
-  const [notifs, setNotifs]  = useState(NOTIFICATIONS);
+  const { notifications, markRead } = useNotifications(member?.id);
 
   useEffect(() => { if (member) setTokens(member.tokens); }, [member]);
-
-  const markRead = (id: number) =>
-    setNotifs(ns => ns.map(n => n.id === id ? { ...n, unread: false } : n));
 
   const statsCards = [
     { label: "Events Attended",  value: stats.eventsAttended,  icon: Calendar   },
