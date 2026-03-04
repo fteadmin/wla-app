@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { supabase } from "@/integrations/supabase/client";
+import { useNotifications, timeAgo } from "@/hooks/useNotifications";
 import {
   Trophy, CheckCircle, Clock, ChevronRight,
   Star, Users, Calendar, TrendingUp, Coins,
@@ -75,12 +76,13 @@ const CONTESTS = [
   { id: 3, title: "Member of the Month",  prize: "500 tokens + Badge",    ends: "Mar 31", entries: 18, category: "Community",  hot: false },
 ];
 
-const NOTIFICATIONS = [
-  { id: 1, icon: Calendar,     color: "text-[#D9BA84]", title: "Monthly Cruise this Saturday",    time: "2h ago",  unread: true  },
-  { id: 2, icon: Coins,        color: "text-[#c8b450]", title: "You earned 150 tokens!",          time: "1d ago",  unread: true  },
-  { id: 3, icon: Trophy,       color: "text-[#D9BA84]", title: "Photo Contest ends in 3 days",    time: "2d ago",  unread: false },
-  { id: 4, icon: CheckCircle,  color: "text-[#a0a0b4]", title: "Membership renewed successfully", time: "5d ago",  unread: false },
-];
+const notifIconMap: Record<string, { icon: typeof Calendar; color: string }> = {
+  new_event:            { icon: Calendar,    color: "text-[#D9BA84]" },
+  rsvp_confirmed:       { icon: Calendar,    color: "text-[#D9BA84]" },
+  new_contest:          { icon: Trophy,      color: "text-[#D9BA84]" },
+  token_purchase:       { icon: Coins,       color: "text-[#c8b450]" },
+  membership_activated: { icon: CheckCircle, color: "text-[#a0a0b4]" },
+};
 
 const STATS = [
   { label: "Events Attended",  value: 12,  icon: Calendar   },
@@ -186,12 +188,9 @@ function Card({ children, className = "" }: { children: React.ReactNode; classNa
 export default function HomeBasic() {
   const { member, loading } = useMemberData();
   const [tokens, setTokens] = useState(0);
-  const [notifs, setNotifs] = useState(NOTIFICATIONS);
+  const { notifications, markRead } = useNotifications(member?.id);
 
   useEffect(() => { if (member) setTokens(member.tokens); }, [member]);
-
-  const markRead = (id: number) =>
-    setNotifs(ns => ns.map(n => n.id === id ? { ...n, unread: false } : n));
 
   if (loading) {
     return (
@@ -364,22 +363,25 @@ export default function HomeBasic() {
               </button>
             </div>
             <div className="flex flex-col gap-0.5">
-              {notifs.map(n => {
-                const Icon = n.icon;
+              {notifications.length === 0 ? (
+                <div className="text-[12px] text-[#a0a0b4] py-4 text-center">No notifications yet.</div>
+              ) : notifications.slice(0, 4).map(n => {
+                const cfg = notifIconMap[n.type] ?? { icon: CheckCircle, color: "text-[#a0a0b4]" };
+                const Icon = cfg.icon;
                 return (
                   <div
                     key={n.id}
                     className="flex items-start gap-2.5 px-3 py-2.5 rounded-xl border border-transparent cursor-pointer hover:bg-[#D9BA84]/4 hover:border-[#D9BA84]/12 transition-all"
                     onClick={() => markRead(n.id)}
                   >
-                    <div className={`w-[30px] h-[30px] rounded-[8px] flex items-center justify-center flex-shrink-0 bg-[#D9BA84]/9 ${n.color}`}>
+                    <div className={`w-[30px] h-[30px] rounded-[8px] flex items-center justify-center flex-shrink-0 bg-[#D9BA84]/9 ${cfg.color}`}>
                       <Icon size={14} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className={`text-[13px] text-white leading-snug ${n.unread ? "font-semibold" : "font-normal"}`}>{n.title}</div>
-                      <div className="text-[11px] text-[#a0a0b4] mt-0.5">{n.time}</div>
+                      <div className={`text-[13px] text-white leading-snug ${n.read ? "font-normal" : "font-semibold"}`}>{n.title}</div>
+                      <div className="text-[11px] text-[#a0a0b4] mt-0.5">{timeAgo(n.created_at)}</div>
                     </div>
-                    {n.unread && <span className="w-1.5 h-1.5 rounded-full bg-[#D9BA84] mt-1.5 flex-shrink-0" />}
+                    {!n.read && <span className="w-1.5 h-1.5 rounded-full bg-[#D9BA84] mt-1.5 flex-shrink-0" />}
                   </div>
                 );
               })}
