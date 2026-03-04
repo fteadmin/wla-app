@@ -150,7 +150,7 @@ export default function Login() {
             </div>
 
             <div className="space-y-1.5">
-              <div className="flex justify-between items-center"><label className="text-[12px] font-medium text-gray-400">Password</label><a href="#" className="text-[11px] text-[#D9BA84]">Forgot?</a></div>
+              <div className="flex justify-between items-center"><label className="text-[12px] font-medium text-gray-400">Password</label><Link href="/forgot-password" className="text-[11px] text-[#D9BA84] hover:underline">Forgot password?</Link></div>
               <input type="password" className="w-full bg-[#161616] border border-[#D9BA84]/15 rounded-xl py-2.5 px-4 text-sm outline-none focus:border-[#D9BA84]/60 transition-all" value={password} onChange={e => setPassword(e.target.value)} />
             </div>
 
