@@ -1,5 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
+import { usePathname } from "next/navigation";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Bell, ChevronRight, Calendar, Coins, Trophy, CheckCircle, Star } from "lucide-react";
 import { useNotifications, timeAgo, type NotifType } from "@/hooks/useNotifications";
@@ -30,7 +32,43 @@ export default function TopNav({ tokens: tokensProp = 0 }: TopNavProps) {
   const [tokens, setTokens]               = useState(tokensProp);
   const [open, setOpen]                   = useState(false);
 
+  const pathname = usePathname();
   const { notifications, markRead, markAllRead, unreadCount } = useNotifications(userId);
+
+  // Global message toast — fires when a new message arrives and user is NOT on the messages page
+  useEffect(() => {
+    if (!userId || pathname === "/dashboard/messages") return;
+
+    const channel = supabase
+      .channel("messages:global-notify")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "messages" },
+        async (payload) => {
+          const msg = payload.new as { sender_id: string; content: string };
+          if (msg.sender_id === userId) return;
+
+          const { data: profile } = await supabase
+            .from("user_profiles")
+            .select("first_name, last_name, email")
+            .eq("id", msg.sender_id)
+            .maybeSingle();
+
+          const name =
+            [profile?.first_name, profile?.last_name].filter(Boolean).join(" ").trim() ||
+            profile?.email ||
+            "A member";
+
+          toast(`💬 ${name}`, {
+            description: msg.content.length > 80 ? msg.content.slice(0, 80) + "…" : msg.content,
+            duration: 5000,
+          });
+        }
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [userId, pathname]);
 
   useEffect(() => {
     async function fetchProfile() {
