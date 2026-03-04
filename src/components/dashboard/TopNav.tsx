@@ -3,7 +3,8 @@ import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { Bell, ChevronRight, Calendar, Coins, Trophy, CheckCircle, Star } from "lucide-react";
+import { Bell, ChevronRight, Calendar, Coins, Trophy, CheckCircle, Star, MessageSquare } from "lucide-react";
+import Link from "next/link";
 import { useNotifications, timeAgo, type NotifType } from "@/hooks/useNotifications";
 
 const notifConfig: Record<NotifType | string, { icon: typeof Calendar; color: string }> = {
@@ -124,6 +125,19 @@ export default function TopNav({ tokens: tokensProp = 0 }: TopNavProps) {
           <span className="text-[12px] font-bold text-[#D9BA84] font-code">{tokens.toLocaleString()}</span>
           <span className="text-[10px] font-medium text-[#a0a0b4]">tokens</span>
         </div>
+
+        {/* Chat button */}
+        <Link
+          href="/dashboard/messages"
+          className={`relative w-9 h-9 flex items-center justify-center rounded-[10px] border transition-all ${
+            pathname === "/dashboard/messages"
+              ? "bg-[#D9BA84]/12 border-[#D9BA84]/40 text-[#D9BA84]"
+              : "bg-[#161616] border-[#D9BA84]/14 text-[#a0a0b4] hover:border-[#D9BA84]/40 hover:text-[#D9BA84] hover:bg-[#D9BA84]/6"
+          }`}
+          aria-label="Messages"
+        >
+          <MessageSquare size={15} />
+        </Link>
 
         {/* Bell + dropdown */}
         <div className="relative">
