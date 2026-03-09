@@ -14,27 +14,45 @@ CREATE INDEX IF NOT EXISTS idx_messages_sender_id  ON public.messages(sender_id)
 ALTER TABLE public.messages ENABLE ROW LEVEL SECURITY;
 
 -- Only community/admin members can read messages
-CREATE POLICY "Community members can view messages"
-  ON public.messages FOR SELECT
-  USING (
-    EXISTS (
-      SELECT 1 FROM public.user_profiles
-      WHERE id = auth.uid()
-        AND role IN ('community', 'admin')
-    )
-  );
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies 
+    WHERE tablename = 'messages' 
+    AND policyname = 'Community members can view messages'
+  ) THEN
+    CREATE POLICY "Community members can view messages"
+      ON public.messages FOR SELECT
+      USING (
+        EXISTS (
+          SELECT 1 FROM public.user_profiles
+          WHERE id = auth.uid()
+            AND role IN ('community', 'admin')
+        )
+      );
+  END IF;
+END $$;
 
 -- Only community/admin members can send messages (as themselves)
-CREATE POLICY "Community members can send messages"
-  ON public.messages FOR INSERT
-  WITH CHECK (
-    sender_id = auth.uid()
-    AND EXISTS (
-      SELECT 1 FROM public.user_profiles
-      WHERE id = auth.uid()
-        AND role IN ('community', 'admin')
-    )
-  );
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies 
+    WHERE tablename = 'messages' 
+    AND policyname = 'Community members can send messages'
+  ) THEN
+    CREATE POLICY "Community members can send messages"
+      ON public.messages FOR INSERT
+      WITH CHECK (
+        sender_id = auth.uid()
+        AND EXISTS (
+          SELECT 1 FROM public.user_profiles
+          WHERE id = auth.uid()
+            AND role IN ('community', 'admin')
+        )
+      );
+  END IF;
+END $$;
 
 -- ── Enable Supabase Realtime ──────────────────────────────────────────────────
 DO $$
