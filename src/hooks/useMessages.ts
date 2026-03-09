@@ -25,10 +25,11 @@ export function useMessages(userId: string | undefined) {
   useEffect(() => {
     if (!userId) return;
 
-    // Initial fetch — last 50 messages, then batch-load sender profiles
+    // Initial fetch — last 50 community messages (recipient_id IS NULL), then batch-load sender profiles
     supabase
       .from("messages")
       .select("id, sender_id, content, created_at")
+      .is("recipient_id", null) // Only fetch community messages
       .order("created_at", { ascending: true })
       .limit(50)
       .then(async ({ data: msgs, error }) => {
@@ -50,12 +51,12 @@ export function useMessages(userId: string | undefined) {
         setLoading(false);
       });
 
-    // Realtime: incoming messages
+    // Realtime: incoming community messages (recipient_id IS NULL)
     const channel = supabase
       .channel("messages:community")
       .on(
         "postgres_changes",
-        { event: "INSERT", schema: "public", table: "messages" },
+        { event: "INSERT", schema: "public", table: "messages", filter: "recipient_id=is.null" },
         async (payload) => {
           const raw = payload.new as MessageRow;
 
@@ -114,7 +115,7 @@ export function useMessages(userId: string | undefined) {
 
     const { error: insertError } = await supabase
       .from("messages")
-      .insert({ sender_id: userId, content: content.trim() });
+      .insert({ sender_id: userId, content: content.trim(), recipient_id: null }); // Community message has no recipient
 
     if (insertError) {
       setError("Failed to send message.");

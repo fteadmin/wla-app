@@ -18,14 +18,32 @@ CREATE INDEX IF NOT EXISTS idx_notifications_read       ON public.notifications(
 ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
 
 -- Users can only read their own notifications
-CREATE POLICY "Users can view own notifications"
-  ON public.notifications FOR SELECT
-  USING (auth.uid() = user_id);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies 
+    WHERE tablename = 'notifications' 
+    AND policyname = 'Users can view own notifications'
+  ) THEN
+    CREATE POLICY "Users can view own notifications"
+      ON public.notifications FOR SELECT
+      USING (auth.uid() = user_id);
+  END IF;
+END $$;
 
 -- Users can mark their own notifications as read
-CREATE POLICY "Users can update own notifications"
-  ON public.notifications FOR UPDATE
-  USING (auth.uid() = user_id);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies 
+    WHERE tablename = 'notifications' 
+    AND policyname = 'Users can update own notifications'
+  ) THEN
+    CREATE POLICY "Users can update own notifications"
+      ON public.notifications FOR UPDATE
+      USING (auth.uid() = user_id);
+  END IF;
+END $$;
 
 -- ── Enable Supabase Realtime ──────────────────────────────────────────────────
 -- Wrapped in DO block: safe whether the publication is FOR ALL TABLES or not
