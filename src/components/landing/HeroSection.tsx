@@ -9,57 +9,48 @@ const HeroSection = () => {
   const router = useRouter();
 
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-      {/* Animated background */}
+    <section className="relative min-h-screen overflow-hidden">
       <div className="absolute inset-0">
-        <div className="absolute inset-0 bg-gradient-to-b from-background via-background to-muted" />
-        <motion.div
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] rounded-full opacity-20"
-          style={{
-            background: "radial-gradient(circle, hsl(38 46% 68% / 0.3) 0%, transparent 70%)",
-          }}
-          animate={{ scale: [1, 1.2, 1], opacity: [0.15, 0.25, 0.15] }}
-          transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+        <img
+          src="https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&w=2200&q=80"
+          alt="Lowrider at sunset"
+          className="h-full w-full object-cover"
+          loading="eager"
         />
-        <motion.div
-          className="absolute top-1/4 right-1/4 w-[400px] h-[400px] rounded-full opacity-10"
-          style={{
-            background: "radial-gradient(circle, hsl(46 49% 55% / 0.3) 0%, transparent 70%)",
-          }}
-          animate={{ scale: [1.2, 1, 1.2], opacity: [0.1, 0.2, 0.1] }}
-          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-        />
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/70 to-background/35" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_25%,hsl(var(--primary)/0.15),transparent_55%)]" />
       </div>
 
-      <div className="relative z-10 container mx-auto px-6 text-center">
+      <div className="relative z-10 container mx-auto flex min-h-screen items-center px-6 py-28">
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
+          transition={{ duration: 0.7 }}
+          className="mx-auto w-full max-w-4xl text-center"
         >
           <motion.p
-            className="text-primary tracking-[0.3em] uppercase text-sm font-medium mb-6"
+            className="mb-6 inline-block rounded-full border border-border/60 bg-background/35 px-5 py-2 text-xs font-medium uppercase tracking-[0.25em] text-primary backdrop-blur"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.3 }}
+            transition={{ delay: 0.25 }}
           >
             World Lowrider Association
           </motion.p>
-          <h1 className="font-display text-5xl md:text-7xl lg:text-8xl font-bold mb-6 leading-tight">
-            <span className="text-foreground">United by </span>
-            <span className="text-primary">Culture</span>
-            <br />
-            <span className="text-foreground">Driven by </span>
-            <span className="text-accent">Legacy</span>
+
+          <h1 className="font-display text-5xl font-bold leading-[0.95] text-foreground sm:text-6xl md:text-7xl xl:text-8xl">
+            Built for the
+            <span className="text-primary"> Lowrider Culture</span>
           </h1>
-          <p className="text-secondary text-lg md:text-xl max-w-2xl mx-auto mb-10 font-light">
-            The premier global platform for lowrider enthusiasts. Join the movement,
-            showcase your ride, and connect with a worldwide community.
+
+          <p className="mx-auto mt-6 max-w-2xl text-base text-secondary sm:text-lg md:text-xl">
+            Join a global community of builders, collectors, and enthusiasts. Share your ride,
+            enter contests, and grow your legacy with WLA.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+
+          <div className="mt-9 flex flex-col justify-center gap-4 sm:flex-row">
             <Button
               size="lg"
-              className="bg-primary text-primary-foreground hover:bg-primary/90 text-lg px-8 py-6 shadow-[0_0_30px_hsl(38_46%_68%_/_0.3)] hover:shadow-[0_0_50px_hsl(38_46%_68%_/_0.5)] transition-all duration-300"
+              className="bg-primary px-8 py-6 text-lg text-primary-foreground hover:bg-primary/90"
               onClick={() => router.push("/signup")}
             >
               Join WLA <ChevronRight className="ml-2 h-5 w-5" />
@@ -67,7 +58,7 @@ const HeroSection = () => {
             <Button
               variant="outline"
               size="lg"
-              className="border-border text-foreground hover:bg-muted text-lg px-8 py-6"
+              className="border-border/80 bg-background/30 px-8 py-6 text-lg text-foreground hover:bg-background/50"
               onClick={() => {
                 document.getElementById("about")?.scrollIntoView({ behavior: "smooth" });
               }}
@@ -75,10 +66,22 @@ const HeroSection = () => {
               Learn More
             </Button>
           </div>
+
+          {/* <div className="mx-auto mt-10 grid max-w-2xl grid-cols-3 gap-3 rounded-2xl border border-border/60 bg-background/35 p-3 backdrop-blur-md">
+            {[
+              ["25+", "Countries"],
+              ["10K+", "Members"],
+              ["500+", "Contests"],
+            ].map(([value, label]) => (
+              <div key={label} className="rounded-lg bg-background/45 px-2 py-3">
+                <p className="font-display text-xl text-foreground md:text-2xl">{value}</p>
+                <p className="text-[11px] uppercase tracking-wider text-muted-foreground md:text-xs">{label}</p>
+              </div>
+            ))}
+          </div> */}
         </motion.div>
       </div>
 
-      {/* Scroll indicator */}
       <motion.div
         className="absolute bottom-8 left-1/2 -translate-x-1/2"
         animate={{ y: [0, 10, 0] }}

@@ -8,6 +8,8 @@ const previews = [
     description:
       "Buy, sell, and trade lowrider parts, accessories, and custom builds with verified WLA members.",
     tag: "Coming Soon",
+    image:
+      "https://images.unsplash.com/photo-1511919884226-fd3cad34687c?auto=format&fit=crop&w=1400&q=80",
   },
   {
     icon: Camera,
@@ -15,6 +17,8 @@ const previews = [
     description:
       "Compete in themed photo contests, earn BLVD tokens, and get featured across the WLA community.",
     tag: "Coming Soon",
+    image:
+      "https://images.unsplash.com/photo-1502877338535-766e1452684a?auto=format&fit=crop&w=1400&q=80",
   },
 ];
 
@@ -36,26 +40,42 @@ const PreviewSection = () => {
           </h2>
         </motion.div>
 
-        <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+        <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
           {previews.map((item, i) => (
             <motion.div
               key={item.title}
-              className="group relative rounded-2xl p-8 border border-border bg-card/50 backdrop-blur-sm hover:border-primary/30 transition-all duration-500"
+              className="group relative overflow-hidden rounded-2xl border border-border/70 bg-card/50 backdrop-blur-sm hover:border-primary/40 transition-all duration-500"
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: i * 0.15 }}
             >
-              <div className="flex items-center justify-between mb-4">
-                <item.icon className="h-8 w-8 text-primary" />
-                <span className="text-xs uppercase tracking-wider text-accent font-medium px-3 py-1 rounded-full border border-accent/20 bg-accent/5">
-                  {item.tag}
-                </span>
+              <div className="relative h-64 overflow-hidden">
+                <img
+                  src={item.image}
+                  alt={item.title}
+                  className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  loading="lazy"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-background via-background/35 to-transparent" />
+                <div className="absolute top-4 left-4">
+                  <span className="text-xs uppercase tracking-wider text-accent font-medium px-3 py-1 rounded-full border border-accent/30 bg-background/65 backdrop-blur-sm">
+                    {item.tag}
+                  </span>
+                </div>
+                <div className="absolute bottom-4 left-4 flex items-center gap-3">
+                  <div className="rounded-full border border-border bg-background/75 p-2">
+                    <item.icon className="h-5 w-5 text-primary" />
+                  </div>
+                  <p className="font-display text-xl text-foreground">{item.title}</p>
+                </div>
               </div>
-              <h3 className="font-display text-2xl font-bold text-foreground mb-3">{item.title}</h3>
-              <p className="text-muted-foreground leading-relaxed mb-4">{item.description}</p>
-              <div className="flex items-center gap-2 text-primary text-sm font-medium group-hover:gap-3 transition-all">
-                Learn more <ArrowRight className="h-4 w-4" />
+
+              <div className="p-6">
+                <p className="text-muted-foreground leading-relaxed mb-4">{item.description}</p>
+                <div className="flex items-center gap-2 text-primary text-sm font-medium group-hover:gap-3 transition-all">
+                  Learn more <ArrowRight className="h-4 w-4" />
+                </div>
               </div>
             </motion.div>
           ))}
