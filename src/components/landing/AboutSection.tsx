@@ -1,11 +1,4 @@
 import { motion } from "framer-motion";
-import { Users, Globe, Trophy } from "lucide-react";
-
-const stats = [
-  { icon: Users, label: "Members Worldwide", value: "10,000+" },
-  { icon: Globe, label: "Countries Represented", value: "25+" },
-  { icon: Trophy, label: "Contests Held", value: "500+" },
-];
 
 const moments = [
   {

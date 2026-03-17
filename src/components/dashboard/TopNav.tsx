@@ -105,15 +105,6 @@ export default function TopNav({ tokens: tokensProp = 0 }: TopNavProps) {
     <header className="sticky top-0 z-30 h-[60px] flex items-center px-3 sm:px-6 gap-2 sm:gap-4 bg-black/85 backdrop-blur-md border-b border-[#D9BA84]/12 font-sora flex-shrink-0"
       style={{ boxShadow: "inset 0 -1px 0 0 rgba(217,186,132,0.08)" }}>
 
-      {/* Divider */}
-      <div className="hidden sm:block w-px h-6 bg-[#D9BA84]/15 flex-shrink-0" />
-
-      {/* Status pill */}
-      <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-[4px] rounded-full bg-[#D9BA84]/7 border border-[#D9BA84]/15 text-[11px] font-semibold text-[#D9BA84] flex-shrink-0">
-        <span className="w-1.5 h-1.5 rounded-full bg-[#D9BA84] shadow-[0_0_5px_rgba(217,186,132,0.6)] animate-dot-pulse" />
-        Active
-      </div>
-
       <div className="flex-1 min-w-0" />
 
       {/* Right cluster */}
