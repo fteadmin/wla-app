@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   Home, ShoppingBag, Trophy, Upload, CreditCard, Coins,
-  ChevronRight, Car, LogOut, Settings, Menu, X, CalendarDays
+  ChevronRight, Car, LogOut, Settings, Menu, X, CalendarDays, HelpCircle
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -37,6 +37,10 @@ export default function SideNav({
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
+  const [displayName, setDisplayName] = useState(memberName);
+  const [savingName, setSavingName] = useState(false);
   const currentActive = active || pathname.split("/dashboard/")[1] || "dashboard";
 
   // Auto-close on route change for mobile
@@ -55,10 +59,29 @@ export default function SideNav({
     }
   };
 
-  // Auto-close on route change for mobile
-  useEffect(() => {
-    setMobileOpen(false);
-  }, [pathname]);
+  const handleSaveDisplayName = async () => {
+    setSavingName(true);
+    try {
+      const { data: auth } = await supabase.auth.getUser();
+      if (!auth.user) return;
+
+      const [firstName, ...lastNameParts] = displayName.split(" ");
+      const lastName = lastNameParts.join(" ");
+
+      const { error } = await supabase
+        .from("user_profiles")
+        .update({ first_name: firstName, last_name: lastName })
+        .eq("id", auth.user.id);
+
+      if (!error) {
+        setSettingsOpen(false);
+      }
+    } catch (error) {
+      console.error("Error updating display name:", error);
+    } finally {
+      setSavingName(false);
+    }
+  };
 
   return (
     <>
@@ -133,24 +156,92 @@ export default function SideNav({
         </nav>
 
         {/* Footer actions */}
-        <div className="relative z-10 p-2 border-t border-[#D9BA84]/10 bg-[#0a0a0a]">
-          <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-[#D9BA84]/5 border border-[#D9BA84]/10">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center text-[10px] font-bold text-[#D9BA84] bg-[#D9BA84]/10 border border-[#D9BA84]/20">{memberInitials}</div>
-            <div className="min-w-0 flex-1">
-              <p className="text-[12px] font-semibold text-white truncate leading-none">{memberName}</p>
-              <p className="text-[9px] text-[#D9BA84] mt-1">{memberTier}</p>
-            </div>
-          </div>
+        <div className="relative z-10 p-2 space-y-1 border-t border-[#D9BA84]/10 bg-[#0a0a0a]">
+          <button 
+            onClick={() => setSettingsOpen(true)}
+            className="flex items-center gap-2.5 px-3 py-2 text-[13px] text-[#a0a0b4] hover:text-[#D9BA84] transition-colors w-full rounded-lg hover:bg-[#D9BA84]/6"
+          >
+            <Settings size={14} /> 
+            Settings
+          </button>
+          <button 
+            onClick={() => setHelpOpen(true)}
+            className="flex items-center gap-2.5 px-3 py-2 text-[13px] text-[#a0a0b4] hover:text-[#D9BA84] transition-colors w-full rounded-lg hover:bg-[#D9BA84]/6"
+          >
+            <HelpCircle size={14} /> 
+            Help
+          </button>
           <button 
             onClick={handleSignOut}
             disabled={signingOut}
-            className="flex items-center gap-2.5 px-3 py-2 text-[13px] text-[#a0a0b4] hover:text-red-400 transition-colors w-full mt-1 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center gap-2.5 px-3 py-2 text-[13px] text-[#a0a0b4] hover:text-red-400 transition-colors w-full rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <LogOut size={14} className={signingOut ? "animate-spin" : ""} /> 
             {signingOut ? "Signing Out..." : "Sign Out"}
           </button>
         </div>
       </aside>
+
+      {/* Settings Modal */}
+      {settingsOpen && (
+        <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 lg:p-0">
+          <div className="bg-[#0d0d0d] border border-[#D9BA84]/20 rounded-2xl shadow-2xl max-w-sm w-full p-6 space-y-4">
+            <h2 className="text-xl font-bold text-white">Settings</h2>
+            <p className="text-sm text-[#a0a0b4]">Edit your display name</p>
+            <input
+              type="text"
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+              className="w-full px-4 py-2 bg-[#161616] border border-[#D9BA84]/20 rounded-lg text-white placeholder-[#a0a0b4] focus:outline-none focus:border-[#D9BA84]/50 transition-colors"
+              placeholder="Your name"
+            />
+            <div className="flex gap-3 pt-4">
+              <button
+                onClick={() => setSettingsOpen(false)}
+                className="flex-1 px-4 py-2 bg-[#161616] border border-[#D9BA84]/20 text-[#a0a0b4] hover:text-white rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveDisplayName}
+                disabled={savingName || displayName === memberName}
+                className="flex-1 px-4 py-2 bg-[#D9BA84] text-black font-semibold rounded-lg hover:bg-[#c8b450] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {savingName ? "Saving..." : "Save"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Help Modal */}
+      {helpOpen && (
+        <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 lg:p-0">
+          <div className="bg-[#0d0d0d] border border-[#D9BA84]/20 rounded-2xl shadow-2xl max-w-md w-full p-6 space-y-4 max-h-[80vh] overflow-y-auto">
+            <h2 className="text-xl font-bold text-white">About WLA</h2>
+            <div className="space-y-3 text-sm text-[#a0a0b4]">
+              <p>Welcome to the <span className="text-[#D9BA84] font-semibold">World Lowrider Association</span> portal.</p>
+              <div>
+                <p className="text-white font-semibold mb-1">Features:</p>
+                <ul className="space-y-1 ml-3 list-disc">
+                  <li><span className="text-white">Marketplace</span> — Buy, sell, and trade lowrider parts & builds</li>
+                  <li><span className="text-white">Contests</span> — Compete in photo contests and earn BLVD tokens</li>
+                  <li><span className="text-white">Events</span> — Discover and attend lowrider events worldwide</li>
+                  <li><span className="text-white">Membership</span> — Manage your WLA membership status</li>
+                  <li><span className="text-white">Token System</span> — Earn and spend BLVD tokens within the community</li>
+                </ul>
+              </div>
+              <p>Join a global community of builders, collectors, and enthusiasts united by lowrider culture.</p>
+            </div>
+            <button
+              onClick={() => setHelpOpen(false)}
+              className="w-full px-4 py-2 bg-[#D9BA84] text-black font-semibold rounded-lg hover:bg-[#c8b450] transition-colors"
+            >
+              Got it
+            </button>
+          </div>
+        </div>
+      )}
     </>
   );
 }
