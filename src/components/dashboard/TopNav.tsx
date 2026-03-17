@@ -186,9 +186,9 @@ export default function TopNav({ tokens: tokensProp = 0 }: TopNavProps) {
 
               {/* Footer */}
               <div className="px-4 py-2.5 border-t border-[#D9BA84]/8 text-center">
-                <button className="text-[11px] text-[#D9BA84] font-semibold inline-flex items-center gap-1 hover:opacity-70 transition-opacity font-sora">
+                <Link href="/dashboard/notifications" className="text-[11px] text-[#D9BA84] font-semibold inline-flex items-center gap-1 hover:opacity-70 transition-opacity font-sora">
                   View all notifications <ChevronRight size={10} />
-                </button>
+                </Link>
               </div>
             </div>
           )}
