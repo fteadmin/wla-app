@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   Home, ShoppingBag, Trophy, Upload, CreditCard, Coins,
-  ChevronRight, Car, LogOut, Settings, Menu, X, CalendarDays
+  Car, LogOut, Menu, X, CalendarDays, Shield
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -37,7 +37,22 @@ export default function SideNav({
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const currentActive = active || pathname.split("/dashboard/")[1] || "dashboard";
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      if (!data.user) return;
+      supabase
+        .from("user_profiles")
+        .select("role")
+        .eq("id", data.user.id)
+        .maybeSingle()
+        .then(({ data: profile }) => {
+          if (profile?.role === "admin") setIsAdmin(true);
+        });
+    });
+  }, []);
 
   // Auto-close on route change for mobile
   useEffect(() => {
@@ -130,6 +145,32 @@ export default function SideNav({
               </Link>
             );
           })}
+
+          {isAdmin && (
+            <>
+              <div className="px-3 pb-2 pt-4 text-[9px] font-bold tracking-widest uppercase text-[#D9BA84]/50">Admin</div>
+              <Link
+                href="/dashboard/admin"
+                className={cn(
+                  "relative flex items-center gap-2.5 px-3 py-[10px] rounded-xl text-[13px] font-medium border group transition-all duration-200 no-underline mb-0.5",
+                  pathname === "/dashboard/admin"
+                    ? "text-white bg-[#D9BA84]/10 border-[#D9BA84]/22"
+                    : "text-[#a0a0b4] border-transparent hover:text-white hover:bg-[#D9BA84]/6"
+                )}
+              >
+                {pathname === "/dashboard/admin" && <span className="absolute left-0 top-1/4 bottom-1/4 w-[3px] rounded-r-[3px] bg-[#D9BA84]" />}
+                <div className={cn(
+                  "w-[30px] h-[30px] rounded-[8px] flex items-center justify-center border transition-all duration-200",
+                  pathname === "/dashboard/admin"
+                    ? "bg-[#D9BA84]/12 border-[#D9BA84]/25 text-[#D9BA84]"
+                    : "bg-white/[0.04] border-white/[0.06] group-hover:text-[#D9BA84]"
+                )}>
+                  <Shield size={14} />
+                </div>
+                <span className="flex-1">Admin Panel</span>
+              </Link>
+            </>
+          )}
         </nav>
 
         {/* Footer actions */}

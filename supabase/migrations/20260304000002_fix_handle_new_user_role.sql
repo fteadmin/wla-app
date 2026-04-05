@@ -6,6 +6,7 @@ RETURNS trigger
 LANGUAGE plpgsql
 SECURITY DEFINER
 AS $function$
+● Got the additional requests — I'll finish the core build then add those. Let
 DECLARE
   user_role TEXT;
 BEGIN
