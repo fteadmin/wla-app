@@ -30,6 +30,7 @@ const Navbar = () => {
           <button onClick={() => scrollTo("about")} className="text-sm text-muted-foreground hover:text-foreground transition-colors">About</button>
           <button onClick={() => scrollTo("membership")} className="text-sm text-muted-foreground hover:text-foreground transition-colors">Membership</button>
           <button onClick={() => scrollTo("features")} className="text-sm text-muted-foreground hover:text-foreground transition-colors">Features</button>
+          <button onClick={() => router.push("/contact")} className="text-sm text-muted-foreground hover:text-foreground transition-colors">Contact</button>
           <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90" onClick={() => router.push("/login")}>Login</Button>
           <Button size="sm" className="bg-secondary text-secondary-foreground hover:bg-secondary/90 ml-2" onClick={() => router.push("/signup")}>Sign Up</Button>
         </div>
@@ -53,6 +54,7 @@ const Navbar = () => {
               <button onClick={() => scrollTo("about")} className="text-left text-muted-foreground hover:text-foreground">About</button>
               <button onClick={() => scrollTo("membership")} className="text-left text-muted-foreground hover:text-foreground">Membership</button>
               <button onClick={() => scrollTo("features")} className="text-left text-muted-foreground hover:text-foreground">Features</button>
+              <button onClick={() => { setOpen(false); router.push("/contact"); }} className="text-left text-muted-foreground hover:text-foreground">Contact</button>
               <Button className="bg-primary text-primary-foreground hover:bg-primary/90" onClick={() => router.push("/login")}>Login</Button>
               <Button className="bg-secondary text-secondary-foreground hover:bg-secondary/90" onClick={() => router.push("/signup")}>Sign Up</Button>
             </div>

@@ -14,7 +14,7 @@ const Footer = () => {
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li><a href="#about">About</a></li>
               <li><a href="#membership">Membership</a></li>
-              <li><a href="#contact">Contact</a></li>
+              <li><a href="/contact">Contact</a></li>
               <li><a href="/privacy-policy">Privacy Policy</a></li>
             </ul>
           </div>
