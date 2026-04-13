@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Smartphone } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 const HeroSection = () => {
@@ -12,8 +12,8 @@ const HeroSection = () => {
     <section className="relative min-h-screen overflow-hidden">
       <div className="absolute inset-0">
         <img
-          src="https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&w=2200&q=80"
-          alt="Lowrider at sunset"
+          src="/hero.png"
+          alt="World Lowrider Association - WLA lowrider car at sunset"
           className="h-full w-full object-cover"
           loading="eager"
         />
@@ -66,6 +66,18 @@ const HeroSection = () => {
               Learn More
             </Button>
           </div>
+
+          <motion.button
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6 }}
+            onClick={() => document.getElementById("app")?.scrollIntoView({ behavior: "smooth" })}
+            className="mt-6 inline-flex items-center gap-2.5 rounded-full border border-primary/30 bg-background/25 px-5 py-2.5 text-sm text-primary backdrop-blur transition-colors hover:bg-background/40 hover:border-primary/60"
+          >
+            <Smartphone className="h-4 w-4" />
+            WLA App coming to iOS &amp; Android — Learn More
+            <ChevronRight className="h-3.5 w-3.5" />
+          </motion.button>
 
           {/* <div className="mx-auto mt-10 grid max-w-2xl grid-cols-3 gap-3 rounded-2xl border border-border/60 bg-background/35 p-3 backdrop-blur-md">
             {[

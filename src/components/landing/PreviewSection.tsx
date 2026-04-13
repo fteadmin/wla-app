@@ -8,8 +8,7 @@ const previews = [
     description:
       "Buy, sell, and trade lowrider parts, accessories, and custom builds with verified WLA members.",
     tag: "Coming Soon",
-    image:
-      "https://images.unsplash.com/photo-1511919884226-fd3cad34687c?auto=format&fit=crop&w=1400&q=80",
+    image: "/low2.jpg",
   },
   {
     icon: Camera,
@@ -17,8 +16,7 @@ const previews = [
     description:
       "Compete in themed photo contests, earn BLVD tokens, and get featured across the WLA community.",
     tag: "Coming Soon",
-    image:
-      "https://images.unsplash.com/photo-1502877338535-766e1452684a?auto=format&fit=crop&w=1400&q=80",
+    image: "/low4.jpg",
   },
 ];
 

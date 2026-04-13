@@ -3,18 +3,15 @@ import { motion } from "framer-motion";
 const moments = [
   {
     title: "Street Showcases",
-    image:
-      "https://images.unsplash.com/photo-1489824904134-891ab64532f1?auto=format&fit=crop&w=1200&q=80",
+    image: "/low3.jpg",
   },
   {
     title: "Build Details",
-    image:
-      "https://images.unsplash.com/photo-1493238792000-8113da705763?auto=format&fit=crop&w=1200&q=80",
+    image: "/low4.jpg",
   },
   {
     title: "Event Days",
-    image:
-      "https://images.unsplash.com/photo-1464219789935-c2d9d9aba644?auto=format&fit=crop&w=1200&q=80",
+    image: "/low5.jpg",
   },
 ];
 
@@ -32,7 +29,7 @@ const AboutSection = () => {
           >
             <div className="overflow-hidden rounded-3xl border border-border/60">
               <img
-                src="https://images.unsplash.com/photo-1507136566006-cfc505b114fc?auto=format&fit=crop&w=1400&q=80"
+                src="/low1.jpg"
                 alt="Lowrider culture gathering"
                 className="h-[460px] w-full object-cover"
                 loading="lazy"
